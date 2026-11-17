@@ -10,6 +10,8 @@ import re
 import threading
 from typing import Callable
 
+from program_name import SUFFIX
+
 POLL_SECONDS = 1.0
 FLAG_SOURCES = ('speaker_muted', 'mic_muted', 'media_playing', 'media_shuffle', 'media_repeat')
 EMPTY = {'volume': None, 'speaker_muted': False, 'mic_muted': False,
@@ -60,7 +62,7 @@ def read_audio() -> dict:
 
 
 AUDIO_OPERATIONS = ('toggle', 'mute', 'unmute', 'volume', 'up', 'down')
-APP_TARGET = re.compile(r'app:([A-Za-z0-9_.-]{1,64}\.exe)', re.IGNORECASE)
+APP_TARGET = re.compile(rf'app:([A-Za-z0-9_.-]{{1,64}}{SUFFIX})', re.IGNORECASE)  # a trailing .exe is optional on Linux
 
 
 def check_audio(action: dict) -> None:

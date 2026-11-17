@@ -32,7 +32,8 @@ import permission
 from deck_assets import Assets
 from program_locator import locate
 from substitution import check_web_url, expand_environment, substitute
-from pc_state import PcState, control_audio, control_media
+from pc_state import PcState
+from system_audio import MediaReader, control_audio, control_media, read_audio
 from host_runtime import DEFAULT_PORT, InstanceLock, SuspendableRLock, candidate_ports, remember_port, session_locked
 from system_stats import SystemStats, gauge_state
 
@@ -188,7 +189,7 @@ class Daemon(DisplayMixin, BackgroundMixin, PressMixin):
         self.agents = {'codex': False, 'claude': False, 'zcode': False}
         self.agent_scan_at = 0.0
         self.stats = SystemStats()
-        self.pc = PcState()
+        self.pc = PcState(audio=read_audio, media=MediaReader())
         self.calendar = calendar_feed.Feed()
         self.events = EventLog()
         self.plugins = None

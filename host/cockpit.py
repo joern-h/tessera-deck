@@ -5,6 +5,7 @@ a 1100-byte buffer, so every payload here is built to stay well below that.
 """
 from __future__ import annotations
 
+import sys
 import json
 
 PROTOCOL = 4
@@ -128,6 +129,9 @@ def read_mixer(pinned: list | None = None, mic: bool = True) -> list[dict]:
 
     `pinned` names the programs to show (those that have a sound session right now); without it the programs that
     play sound are chosen."""
+    if sys.platform.startswith('linux'):  # the sound server of Linux instead of Windows Core Audio
+        from platform_linux.audio import read_mixer as read_linux_mixer
+        return read_linux_mixer(pinned, mic)
     from pc_state import APP_TARGET, _with_audio
 
     def work(ends):
