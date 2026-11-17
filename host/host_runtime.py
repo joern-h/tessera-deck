@@ -3,6 +3,7 @@ import contextlib
 import json
 import os
 from pathlib import Path
+import sys
 import threading
 
 ESPRESSIF_VID = 0x303A  # USB Serial/JTAG of the ESP32-P4 and of the native-USB S3 board
@@ -109,8 +110,11 @@ class InstanceLock:
 
 
 def session_locked() -> bool:
-    """True while the Windows lock screen (the secure desktop) has the input."""
+    """True while the lock screen has the input (Windows: the secure desktop; Linux: logind and the screensaver)."""
     if os.name != 'nt':
+        if sys.platform.startswith('linux'):
+            from platform_linux import session
+            return session.locked()
         return False
     import ctypes
     user32 = ctypes.WinDLL('user32', use_last_error=True)

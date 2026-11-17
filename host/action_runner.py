@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import os
+import signal
 import subprocess
 import tempfile
 import threading
@@ -29,7 +30,10 @@ def kill_tree(process: subprocess.Popen) -> None:
                        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
                        creationflags=subprocess.CREATE_NO_WINDOW)
     else:
-        process.kill()
+        try:  # the command runs in its own session (see run_command), so its whole group goes, not just the shell
+            os.killpg(process.pid, signal.SIGKILL)
+        except (ProcessLookupError, PermissionError):
+            process.kill()
     try:
         process.wait(timeout=2)
     except subprocess.TimeoutExpired:
@@ -42,7 +46,8 @@ def run_command(command, timeout: float, stop: threading.Event, shell: bool = Tr
     # stderr goes to a file, not a pipe: a program launched with `start` inherits a pipe and would hold it open
     with tempfile.TemporaryFile() as errors:
         process = subprocess.Popen(command, shell=shell, stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
-                                   stderr=errors, creationflags=flags, cwd=cwd)
+                                   stderr=errors, creationflags=flags, cwd=cwd,
+                                   start_new_session=not IS_WINDOWS)
         deadline = time.monotonic() + timeout
         try:
             while True:
