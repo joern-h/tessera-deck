@@ -196,6 +196,10 @@ class SystemStats:
         self.hwinfo = hwinfo or HWiNFOReader()
         self.lhm = lhm or LibreHardwareMonitorReader()
         frequency = psutil.cpu_freq()
+        self.native_sensors = counters is None and os.name != 'nt'  # Linux: hwmon, the amdgpu files and nvidia-smi
+        if self.native_sensors:
+            from platform_linux.sensors import LinuxSensors
+            counters = LinuxSensors()
         self.counters = counters or WindowsCounters(frequency.max if frequency else None)
         # Tests that inject their own counters get no real graphics-driver readings unless they ask for them.
         self.gpu = gpu if gpu is not None else (GpuReaders() if counters is None else GpuReaders([]))
@@ -214,7 +218,7 @@ class SystemStats:
         now = time.monotonic()
         cpu = psutil.cpu_percent(None)
         ram = psutil.virtual_memory().percent
-        drive = os.environ.get('SystemDrive', 'C:') + '\\'
+        drive = os.environ.get('SystemDrive', 'C:') + '\\' if os.name == 'nt' else '/'
         try:
             disk = psutil.disk_usage(drive).percent
         except OSError:
@@ -250,7 +254,7 @@ class SystemStats:
         self.display['net_up'] = _rate(up)
         self.display['uptime'] = _uptime(time.time() - psutil.boot_time())
         self.display['sensor_status'] = 'LIVE' if readings else 'BASIC'
-        self.hint = '' if readings else HINT_NOT_RUNNING if LHM_EXE.is_file() else HINT_NOT_INSTALLED
+        self.hint = '' if readings or self.native_sensors else HINT_NOT_RUNNING if LHM_EXE.is_file() else HINT_NOT_INSTALLED
         return dict(self.display)
 
 
