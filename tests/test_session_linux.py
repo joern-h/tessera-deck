@@ -74,3 +74,73 @@ class CommandTreeTests(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+
+class FakeLink:
+    """Just enough of a pyserial port for PanelSerial.verify and push_buttons."""
+
+    def __init__(self, port, answer_after=0):
+        self.port, self.sent, self.queue, self.answer_after = port, [], [], answer_after
+
+    def reset_input_buffer(self):
+        self.queue.clear()
+
+    def write(self, raw):
+        self.sent.append(raw)
+        if len(self.sent) > self.answer_after:
+            self.queue.append(b'{"type":"info","boardId":"tessera-p4-crowpanel7","protocol":4}\n')
+        return len(raw)
+
+    in_waiting = property(lambda self: len(self.queue[0]) if self.queue else 0)
+
+    def read(self, size):
+        return self.queue.pop(0) if self.queue else b''
+
+    def close(self):
+        pass
+
+
+class ResetOnOpenTests(unittest.TestCase):
+    def link(self, port, answer_after=0):
+        import panel_serial
+        panel = panel_serial.PanelSerial.__new__(panel_serial.PanelSerial)
+        panel.ser, panel.rx, panel.write_lock, panel.log = FakeLink(port, answer_after), bytearray(), threading.RLock(), lambda *a: None
+        return panel
+
+    def test_a_dev_port_waits_for_the_restart_asks_again_and_settles_afterwards(self):
+        import panel_serial
+        from unittest.mock import patch
+        panel = self.link('/dev/ttyUSB1', answer_after=2)
+        slept = []
+        with patch.object(panel_serial, 'ASK_AGAIN_SECONDS', 0.0), patch.object(panel_serial.time, 'sleep', slept.append):
+            panel.verify()
+        self.assertGreaterEqual(len(panel.ser.sent), 3)  # asked again until it answered
+        self.assertIn(panel_serial.SETTLE_AFTER_RESET_SECONDS, slept)
+        self.assertEqual(panel.info['boardId'], 'tessera-p4-crowpanel7')
+
+    def test_other_ports_ask_once_and_do_not_wait(self):
+        import panel_serial
+        from unittest.mock import patch
+        panel = self.link('COM4')
+        slept = []
+        with patch.object(panel_serial.time, 'sleep', slept.append):
+            panel.verify()
+        self.assertEqual(len(panel.ser.sent), 1)
+        self.assertEqual(slept, [])
+
+    def test_a_damaged_layout_is_sent_again_on_the_same_dev_port_only(self):
+        import panel_serial
+        for port, tries in (('/dev/ttyUSB1', 2), ('COM4', 1)):
+            panel = self.link(port)
+            calls = []
+
+            def push(payload, calls=calls):
+                calls.append(payload)
+                if len(calls) == 1:
+                    raise ValueError('AD_CFG_END INVALID')
+            panel.push_payload = push
+            try:
+                panel.push_buttons([{'id': 1, 'label': 'A'}])
+            except ValueError:
+                pass
+            self.assertEqual(len(calls), tries, port)

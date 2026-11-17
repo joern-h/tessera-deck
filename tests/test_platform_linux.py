@@ -177,10 +177,11 @@ class X11IntegrationTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.folder = tempfile.mkdtemp()
-        cls.display = f':{90 + os.getpid() % 9}'
-        cls.server = subprocess.Popen(['Xvfb', cls.display, '-screen', '0', '1280x800x24'], stderr=subprocess.DEVNULL)
+        # -displayfd lets Xvfb pick a free display number, so a second test run (or a real X server) never collides
+        cls.server = subprocess.Popen(['Xvfb', '-displayfd', '1', '-screen', '0', '1280x800x24'], stdout=subprocess.PIPE,
+                                      stderr=subprocess.DEVNULL, text=True)
+        cls.display = ':' + cls.server.stdout.readline().strip()
         cls.env = dict(os.environ, DISPLAY=cls.display)
-        time.sleep(1.5)
         cls.typed = Path(cls.folder, 'typed.txt')
         cls.term = subprocess.Popen(['xterm', '-title', 'tessera-test', '-e', f'stty raw -echo; cat > {cls.typed}'], env=cls.env,
                                     stderr=subprocess.DEVNULL)

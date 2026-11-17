@@ -22,6 +22,8 @@ HANDSHAKE_SECONDS = 2.5
 RESETS_ON_OPEN = sys.platform.startswith('linux')
 RESET_HANDSHAKE_SECONDS = 10.0
 ASK_AGAIN_SECONDS = 1.0
+# It answers get_info before its boot screen has finished; a layout sent in that moment can lose bytes on the UART.
+SETTLE_AFTER_RESET_SECONDS = 1.5
 PANEL_CACHE_BYTES = 8 * 1024 * 1024  # what firmware without "imgCache" in get_info keeps; CacheLimit in main/deck_images.cpp
 PANEL_SIZE = (1024, 600)  # what firmware without "w"/"h" in get_info has
 OFFLINE_LAYOUT_BYTES = 8192  # what the panel keeps in flash for offline use; LAYOUT_MAX in main/main.cpp
@@ -112,11 +114,14 @@ class PanelSerial:
                     continue
                 if isinstance(message, dict) and message.get('type') == 'info':
                     self.accept(message)
+                    if self.resets_on_open():
+                        time.sleep(SETTLE_AFTER_RESET_SECONDS)
+                        self.ser.reset_input_buffer()  # the boot log and the answers to the repeated questions
                     return
         raise DeviceRejected(f'{self.ser.port} did not identify itself as a Tessera panel', 'silent')
 
     def resets_on_open(self):
-        return RESETS_ON_OPEN and str(self.ser.port).startswith('/dev/')
+        return RESETS_ON_OPEN and str(getattr(getattr(self, 'ser', None), 'port', '')).startswith('/dev/')
 
     def accept(self, info):
         if info.get('boardId') not in BOARD_IDS:
@@ -193,8 +198,12 @@ class PanelSerial:
             raise ValueError('The button layout is too large')
         try:
             self.push_payload(payload)
-        except TimeoutError:
-            self.log('The panel did not acknowledge the button layout; sending it once more')
+        except (TimeoutError, ValueError) as exc:  # lost on the way (timeout) or damaged (INVALID): same port, once more
+            # An INVALID answer is a refusal and is not retried, except on the Linux UART link, where it is almost
+            # always a damaged line, and failing here would close and reopen the port, which restarts the panel.
+            if isinstance(exc, ValueError) and not (self.resets_on_open() and str(exc).startswith('AD_CFG_END INVALID')):
+                raise
+            self.log('The panel did not accept the button layout; sending it once more')
             self.push_payload(payload)  # the layout replaces the old one, so sending it twice is harmless
 
     def push_payload(self, payload):
