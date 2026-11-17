@@ -40,6 +40,7 @@ from system_stats import SystemStats, gauge_state
 # The engine's building blocks live in their own modules; the names stay importable from here for the apps,
 # the tools and the tests.
 from win_input import CHILD_NAMES_SECONDS, IS_WINDOWS, VK, child_names, dry_hotkey, parse_hotkey, real_app_exe  # noqa: F401
+from default_profile import seed_path
 from desktop import (bring_to_front, focus_existing_process, foreground_context, is_neutral_window,  # noqa: F401
                      matches_foreground, send_hotkey, send_mouse, send_text, set_clipboard, window_action)
 from config_check import BETA_STEP, _check_display, in_quiet_hours, validate_config  # noqa: F401
@@ -222,7 +223,7 @@ class Daemon(DisplayMixin, BackgroundMixin, PressMixin):
     def load_profiles(path):
         path = Path(path)
         if not path.exists():
-            seed = path.with_name('profiles.default.json')
+            seed = seed_path(path.parent)
             if seed.exists():
                 path.write_bytes(seed.read_bytes())
         with open(path, encoding='utf-8') as stream:

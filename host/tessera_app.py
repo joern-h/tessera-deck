@@ -1,5 +1,6 @@
 """Local graphical editor for the standalone Tessera."""
 import logging
+from default_profile import seed_path
 from venv_paths import venv_python
 import argparse
 import copy
@@ -375,7 +376,7 @@ class Editor:
             return self.read()
         except (ValueError, TypeError, KeyError, AttributeError) as exc:
             raw = self._raw()
-            defaults = validate_config(config_store.migrate(json.loads((ROOT / 'host/profiles.default.json').read_bytes())))
+            defaults = validate_config(config_store.migrate(json.loads(seed_path(ROOT / 'host').read_bytes())))
             return {'config': defaults, 'revision': hashlib.sha256(raw).hexdigest(),
                     'error': f'profiles.json could not be read ({str(exc)[:200]}). Restore a backup or fix the file.'}
 
@@ -685,7 +686,7 @@ class Editor:
                 if not isinstance(state, dict):
                     raise ValueError
             except (OSError, ValueError):
-                seed = self.path.with_name('profiles.default.json')
+                seed = seed_path(self.path.parent)
                 state = {'welcome_done': not seed.exists() or self._raw() != seed.read_bytes()}
                 changes = changes or {}
             state = {key: value for key, value in state.items() if type(value) is self.SETUP_KEYS.get(key)}

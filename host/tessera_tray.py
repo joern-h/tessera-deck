@@ -166,6 +166,9 @@ class TrayApp:
         self.asked_autostart = FIRST_RUN_PATH.exists()  # the question waits for the first panel connection
         self.icon = pystray.Icon('tessera', make_icon('stopped'), 'Tessera',
                                  menu=pystray.Menu(self.menu_items))
+        if sys.platform.startswith('linux'):  # the X11 tray cannot show balloons: use the desktop's notifications
+            from platform_linux.notify import notify
+            self.icon.notify = lambda message, title=None: notify(message, title or 'Tessera')
 
     # --- actions (all run off the UI thread) ---------------------------------
     def background(self, work, *args):
@@ -351,7 +354,7 @@ class TrayApp:
         yield pystray.MenuItem('Restart host', self.restart_host, enabled=running)
         yield pystray.MenuItem('Stop host', self.stop_host, enabled=running)
         yield pystray.Menu.SEPARATOR
-        yield pystray.MenuItem('Start with Windows', self.toggle_autostart, checked=lambda item: autostart_enabled())
+        yield pystray.MenuItem('Start with Windows' if os.name == 'nt' else 'Start with the desktop', self.toggle_autostart, checked=lambda item: autostart_enabled())
         yield pystray.MenuItem('Show notifications', self.toggle_notifications, checked=lambda item: notifications_enabled())
         yield pystray.MenuItem('Help', pystray.Menu(
             pystray.MenuItem('Open the host log', self.open_log),

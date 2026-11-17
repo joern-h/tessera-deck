@@ -6,7 +6,7 @@
 #   --diagnostics  write a support bundle without button contents
 #   --terminal     the terminal editor        --tray   only the tray icon
 #   --check / --no-browser   run in this terminal
-# Needs Python 3.11 or newer with venv, and xdotool and xclip for keys, text and the clipboard (X11 session).
+# Needs Python 3.12 or newer with venv, and xdotool and xclip for keys, text and the clipboard (X11 session).
 set -u
 export PYTHONUTF8=1
 cd "$(dirname "$(readlink -f "$0")")" || exit 1
@@ -21,7 +21,7 @@ find_python() {
   local candidate
   for candidate in python3 python3.14 python3.13 python3.12 python3.11 python; do
     if command -v "$candidate" >/dev/null 2>&1 &&
-       "$candidate" -c 'import sys; sys.exit(sys.version_info < (3, 11))' 2>/dev/null; then
+       "$candidate" -c 'import sys; sys.exit(sys.version_info < (3, 12))' 2>/dev/null; then
       echo "$candidate"
       return 0
     fi
@@ -32,7 +32,7 @@ find_python() {
 create_environment() {
   local python
   python="$(find_python)" || {
-    echo "Tessera needs Python 3.11 or newer. Install it with your package manager (python3, and python3-venv on Debian or Ubuntu)." >&2
+    echo "Tessera needs Python 3.12 or newer. Install it with your package manager (python3, and python3-venv on Debian or Ubuntu)." >&2
     return 1
   }
   "$python" -m venv host/.venv || {

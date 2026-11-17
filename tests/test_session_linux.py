@@ -144,3 +144,19 @@ class ResetOnOpenTests(unittest.TestCase):
             except ValueError:
                 pass
             self.assertEqual(len(calls), tries, port)
+
+
+class NotifyTests(unittest.TestCase):
+    def test_a_notification_goes_to_notify_send_with_the_title_and_text(self):
+        from platform_linux import notify
+        from unittest.mock import Mock, patch
+        run = Mock(return_value=Mock(returncode=0))
+        with patch('shutil.which', return_value='/usr/bin/notify-send'):
+            self.assertTrue(notify.notify('Panel connected', 'Tessera', run=run))
+        self.assertEqual(run.call_args.args[0], ['notify-send', '--app-name=Tessera', '--', 'Tessera', 'Panel connected'])
+
+    def test_without_notify_send_nothing_happens_and_nothing_raises(self):
+        from platform_linux import notify
+        from unittest.mock import patch
+        with patch('shutil.which', return_value=None):
+            self.assertFalse(notify.notify('x'))
