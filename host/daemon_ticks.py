@@ -10,7 +10,8 @@ import psutil
 
 import agent_activity
 import cockpit
-from win_input import IS_WINDOWS, focus_existing_process
+from desktop import focus_existing_process
+from win_input import IS_WINDOWS
 
 from config_store import write_atomic
 

@@ -38,10 +38,9 @@ from system_stats import SystemStats, gauge_state
 
 # The engine's building blocks live in their own modules; the names stay importable from here for the apps,
 # the tools and the tests.
-from win_input import (CHILD_NAMES_SECONDS, IS_WINDOWS, VK, bring_to_front, child_names, dry_hotkey,  # noqa: F401
-                       focus_existing_process, foreground_context, is_neutral_window,
-                       matches_foreground, parse_hotkey, real_app_exe, send_hotkey, send_mouse, send_text,
-                       set_clipboard, window_action)
+from win_input import CHILD_NAMES_SECONDS, IS_WINDOWS, VK, child_names, dry_hotkey, parse_hotkey, real_app_exe  # noqa: F401
+from desktop import (bring_to_front, focus_existing_process, foreground_context, is_neutral_window,  # noqa: F401
+                     matches_foreground, send_hotkey, send_mouse, send_text, set_clipboard, window_action)
 from config_check import BETA_STEP, _check_display, in_quiet_hours, validate_config  # noqa: F401
 from daemon_display import DisplayMixin
 from daemon_presses import DOUBLE_PRESS_SECONDS, PressMixin  # noqa: F401

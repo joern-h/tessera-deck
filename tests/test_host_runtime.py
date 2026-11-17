@@ -1,4 +1,5 @@
 """Host tests, part two: runtime status, sensors, toggle keys, the control API, focus, reloads and triggers."""
+import win_input
 import copy
 import json
 from pathlib import Path
@@ -945,11 +946,11 @@ class HostRuntimeTests(HostCase):
         user32 = Mock()
         user32.IsIconic.return_value = False  # maximized or normal: SW_RESTORE would un-maximize it
         user32.GetForegroundWindow.return_value = 7  # Windows let it through
-        deck.bring_to_front(user32, 7)
+        win_input.bring_to_front(user32, 7)
         user32.ShowWindow.assert_not_called()
         user32.SetForegroundWindow.assert_called_once_with(7)
         user32.IsIconic.return_value = True  # minimized: restore it first
-        deck.bring_to_front(user32, 7)
+        win_input.bring_to_front(user32, 7)
         user32.ShowWindow.assert_called_once_with(7, 9)
 
     def test_a_refused_focus_is_retried_instead_of_leaving_the_taskbar_flashing(self):
@@ -957,7 +958,7 @@ class HostRuntimeTests(HostCase):
         user32.IsIconic.return_value = False
         user32.GetForegroundWindow.return_value = 3  # another window stays in front: Windows refused
         user32.GetWindowThreadProcessId.return_value = 55
-        deck.bring_to_front(user32, 7)
+        win_input.bring_to_front(user32, 7)
         user32.BringWindowToTop.assert_called_once_with(7)
         self.assertEqual(user32.AttachThreadInput.call_args_list[0].args[1:], (55, True))
         self.assertEqual(user32.AttachThreadInput.call_args_list[-1].args[1:], (55, False), 'the threads are detached again')

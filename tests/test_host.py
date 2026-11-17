@@ -102,12 +102,12 @@ class HostTests(HostCase):
         with patch.object(win_input, '_key') as key:
             key.side_effect = [None, OSError('blocked'), None]
             with self.assertRaises(OSError):
-                deck.send_hotkey('ctrl+c')
+                win_input.send_hotkey('ctrl+c')
             self.assertEqual(key.call_args_list[-1].kwargs, {'vk': 0x11, 'flags': 2})
 
     def test_unicode_sends_utf16_surrogates(self):
         with patch.object(win_input, '_key') as key:
-            deck.send_text('\U0001f680')
+            win_input.send_text('\U0001f680')
             self.assertEqual([call.kwargs['scan'] for call in key.call_args_list],
                              [0xd83d, 0xd83d, 0xde80, 0xde80])
 
@@ -242,7 +242,7 @@ class HostTests(HostCase):
     def test_navigation_keys_are_sent_as_extended_keys(self):
         sent = []
         with patch.object(win_input, '_key', lambda vk=0, scan=0, flags=0: sent.append((vk, flags))):
-            deck.send_hotkey('ctrl+left')
+            win_input.send_hotkey('ctrl+left')
         self.assertEqual(sent, [(0x11, 0), (37, 1), (37, 3), (0x11, 2)])
 
     def test_triggers_may_target_pages_of_any_profile(self):
