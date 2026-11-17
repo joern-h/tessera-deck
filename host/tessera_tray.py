@@ -169,6 +169,8 @@ class TrayApp:
         if sys.platform.startswith('linux'):  # the X11 tray cannot show balloons: use the desktop's notifications
             from platform_linux.notify import notify
             self.icon.notify = lambda message, title=None: notify(message, title or 'Tessera')
+            from platform_linux import tray_menu
+            tray_menu.attach(self.icon, pystray.Menu.SEPARATOR)  # the X11 tray has no menu of its own
 
     # --- actions (all run off the UI thread) ---------------------------------
     def background(self, work, *args):

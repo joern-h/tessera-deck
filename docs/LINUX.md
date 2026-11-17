@@ -28,6 +28,8 @@ After that it starts the tray icon, the USB host and the editor. The editor open
 prints its address instead). `./Tessera.sh --setup`, `--uninstall [--purge]`, `--diagnostics`, `--terminal` and `--tray`
 work as in `Tessera.cmd`. *Start with the desktop* in the tray menu writes `~/.config/autostart/tessera.desktop`.
 
+**The tray icon:** left click opens the editor; right click shows the menu (status, profiles, brightness, *Start / Restart / Stop host*, *Quit tray*, *Quit and stop host*). The menu is drawn with `tkinter`, because the X11 tray icon has no menu of its own. If it does not close when you click elsewhere, press Esc.
+
 Your user must be allowed to open serial ports: the group `uucp` (Arch) or `dialout` (Debian, Ubuntu).
 
 ## The panel link
