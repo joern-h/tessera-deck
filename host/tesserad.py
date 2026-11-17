@@ -522,7 +522,9 @@ class Daemon(DisplayMixin, BackgroundMixin, PressMixin):
                     expanded = target if URI_SCHEME.match(target) else os.path.expandvars(target)
                     os.startfile(expanded if os.path.exists(expanded) else locate(expanded) or expanded)
             else:
-                subprocess.Popen(['xdg-open', target])
+                from platform_linux import programs
+                if not (action.get('reuse', False) and focus_existing_process(action.get('process', ''))):
+                    programs.launch(target)
         elif kind == 'shell':
             command, timeout = self.substitute(action['command'], 'shell'), action.get('timeout', 30)
             with self.state_lock.suspended():  # the panel and API stay responsive while it runs

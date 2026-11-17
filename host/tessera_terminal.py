@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Standalone Tessera terminal and profile editor."""
 import argparse
+from venv_paths import venv_python
 import os
 import asyncio
 import copy
@@ -597,7 +598,7 @@ class TesseraApp(App):
 
     def action_graphic_editor(self):
         import subprocess
-        subprocess.Popen([str(ROOT / 'host/.venv/Scripts/pythonw.exe'),
+        subprocess.Popen([str(venv_python(ROOT, True)),
                           str(ROOT / 'host/tessera_app.py'), '--editor'],
                          creationflags=subprocess.CREATE_NO_WINDOW if os.name == 'nt' else 0)
 

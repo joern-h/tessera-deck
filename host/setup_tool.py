@@ -1,6 +1,6 @@
-"""First-run setup, dependency sync, shortcut, diagnostics and uninstall for the Windows program.
+"""First-run setup, dependency sync, shortcut, diagnostics and uninstall for the program.
 
-Run through Tessera.cmd (`--setup`, `--uninstall`, `--diagnostics`); it is also called on every start to keep the
+Run through Tessera.cmd (Windows) or Tessera.sh (Linux) with `--setup`, `--uninstall` or `--diagnostics`; it is also called on every start to keep the
 virtual environment in step with host/requirements.txt (or its hashed lock file, host/requirements.lock, when
 there is one) without re-installing when nothing changed.
 """
@@ -19,7 +19,8 @@ ROOT = Path(__file__).resolve().parents[1]
 HASH_FILE = ROOT / 'host/.venv/requirements.sha256'
 REQUIREMENTS = ROOT / 'host/requirements.txt'
 LOCK = ROOT / 'host/requirements.lock'
-MODULE_PROBE = 'import serial, psutil, PIL, webview, win32pdh, pystray, comtypes, esptool'
+MODULE_PROBE = ('import serial, psutil, PIL, webview, pystray, keyring, jeepney, esptool' if sys.platform.startswith('linux')
+                else 'import serial, psutil, PIL, webview, win32pdh, pystray, comtypes, esptool')
 MINIMUM_PYTHON = (3, 11)
 # Glob patterns. profiles-*.local.json are the previous and the unreadable copies, profiles.json.*.tmp a save cut short.
 USER_DATA = ('host/profiles.json', 'host/assets', 'host/backups', 'host/state.local.json', 'host/editor.local.json',
@@ -59,7 +60,7 @@ def ensure(python: str = sys.executable, probe: Callable[[str], bool] = imports_
     """Install the host dependencies when needed. Returns False (with a plain explanation) when that fails."""
     if sys.version_info < MINIMUM_PYTHON:
         emit(f'Tessera needs Python {MINIMUM_PYTHON[0]}.{MINIMUM_PYTHON[1]} or newer; this is {sys.version.split()[0]}.'
-             ' Install a newer Python, delete the folder host\\.venv and start Tessera again.')
+             ' Install a newer Python, delete the folder host/.venv and start Tessera again.')
         return False
     command, source = install_command(python, requirements)
     current = requirements_hash(source)
@@ -67,7 +68,7 @@ def ensure(python: str = sys.executable, probe: Callable[[str], bool] = imports_
     reason = needs_install(stored, current, probe(python))
     if reason is None:
         return True
-    emit(f'Installing the Windows host dependencies ({reason}) ...')
+    emit(f'Installing the host dependencies ({reason}) ...')
     run = install or (lambda command: subprocess.run(command).returncode)
     if run(command) != 0:
         emit('The dependencies could not be installed. Check your internet connection and try again; '
@@ -79,6 +80,9 @@ def ensure(python: str = sys.executable, probe: Callable[[str], bool] = imports_
 
 
 def desktop_shortcut_path() -> Path:
+    if sys.platform.startswith('linux'):  # the application menu entry; it is also what a launcher bar or a search finds
+        from platform_linux import desktop_entries
+        return desktop_entries.launcher_path()
     folder = ''
     if os.name == 'nt':  # ask Windows: the Desktop may have been moved, for example into OneDrive
         import ctypes
@@ -91,6 +95,11 @@ def desktop_shortcut_path() -> Path:
 def create_shortcut(target: Path = ROOT / 'Tessera.cmd', link: Path | None = None) -> Path:
     """A Desktop shortcut with the Tessera icon that starts the program minimised."""
     link = link or desktop_shortcut_path()
+    if sys.platform.startswith('linux'):
+        from platform_linux import desktop_entries
+        target = target if target.name != 'Tessera.cmd' else target.with_name('Tessera.sh')
+        return desktop_entries.write(link, desktop_entries.entry([str(target)], target.parent,
+                                                                 target.parent / 'docs/images/logo-mark.svg'))
     # `powershell -Command` does not expose trailing arguments as $args, so the values travel as environment variables.
     script = ('$s=(New-Object -ComObject WScript.Shell).CreateShortcut($env:TESSERA_LINK);$s.TargetPath=$env:TESSERA_TARGET;'
               '$s.WorkingDirectory=$env:TESSERA_FOLDER;$s.IconLocation=$env:TESSERA_ICON;$s.WindowStyle=7;$s.Save()')
@@ -117,13 +126,13 @@ def uninstall(purge: bool = False, confirm: Callable[[str], str] = input, emit: 
         from deck_control import set_autostart as autostart
     try:
         autostart(False)
-        removed.append('start with Windows')
+        removed.append('start with ' + ('Windows' if os.name == 'nt' else 'the desktop'))
     except OSError as exc:
         emit(f'Could not remove the autostart entry: {exc}')
     shortcut = link or desktop_shortcut_path()
     if shortcut.exists():
         shortcut.unlink()
-        removed.append('Desktop shortcut')
+        removed.append('Desktop shortcut' if os.name == 'nt' else 'application menu entry')
     if purge:
         answer = confirm('This permanently deletes your profiles, icons, backups, counters and downloads. '
                          'Type YES to continue: ').strip()
@@ -179,8 +188,8 @@ def main(argv: list[str] | None = None) -> int:
     if args.command == 'setup':
         if not ensure():
             return 1
-        print(f'Desktop shortcut: {create_shortcut()}')
-        print('Setup is done. Start Tessera from the shortcut or with Tessera.cmd.')
+        print(f'Shortcut: {create_shortcut()}')
+        print('Setup is done. Start Tessera from the shortcut or with ' + ('Tessera.cmd.' if os.name == 'nt' else 'Tessera.sh.'))
         return 0
     if args.command == 'uninstall':
         try:

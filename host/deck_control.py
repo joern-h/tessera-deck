@@ -11,6 +11,7 @@ import config_store
 from config_store import write_atomic
 import secrets_store
 from host_runtime import DEFAULT_PORT
+from venv_paths import venv_python
 
 ROOT = Path(__file__).resolve().parents[1]
 MAX_LOG_BYTES = 5 * 1024 * 1024
@@ -28,6 +29,9 @@ def firmware_installing(path=None):
 
 def startup_script_path(appdata=None):
     """Return the per-user Windows Startup shortcut script."""
+    if sys.platform.startswith('linux') and appdata is None:  # the XDG autostart entry
+        from platform_linux import desktop_entries
+        return desktop_entries.autostart_path()
     base = Path(appdata or os.environ.get('APPDATA', ''))
     if not str(base):
         raise OSError('The Windows startup folder is not available')
@@ -42,6 +46,8 @@ def startup_line():
 
 def autostart_enabled(appdata=None):
     """True when Tessera.vbs starts this folder. A script left by a copy in another folder does not count."""
+    if sys.platform.startswith('linux') and appdata is None:  # the XDG autostart entry
+        return startup_script_path(appdata).is_file()
     if os.name != 'nt':
         return False
     try:
@@ -53,12 +59,20 @@ def autostart_enabled(appdata=None):
 
 def set_autostart(enabled, appdata=None):
     """Start the tray app (which starts the USB host) after the user signs in."""
-    if os.name != 'nt' and appdata is None:
-        raise OSError('Automatic startup is only supported on Windows')
+    if os.name != 'nt' and appdata is None and not sys.platform.startswith('linux'):
+        raise OSError('Automatic startup is only supported on Windows and Linux')
     path = startup_script_path(appdata)
     if not enabled:
         path.unlink(missing_ok=True)
         return path
+    if sys.platform.startswith('linux') and appdata is None:
+        from platform_linux import desktop_entries
+        python = venv_python(ROOT)
+        if not python.is_file():
+            raise OSError('Run Tessera.sh once before enabling automatic startup')
+        return desktop_entries.write(path, desktop_entries.entry([str(python), str(ROOT / 'host/tessera_tray.py')], ROOT,
+                                                                 ROOT / 'docs/images/logo-mark.svg',
+                                                                 hidden_start=True))
     if not (ROOT / 'host/.venv/Scripts/pythonw.exe').is_file():
         raise OSError('Run Tessera.cmd once before enabling automatic startup')
     contents = f'Set TesseraShell = CreateObject("WScript.Shell")\r\n{startup_line()}\r\n'

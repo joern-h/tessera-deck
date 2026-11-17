@@ -1,6 +1,7 @@
 """Bounded, content-addressed button images. No user paths cross the HTTP API."""
 import base64
 import ctypes
+import sys
 import hashlib
 from io import BytesIO
 import json
@@ -292,6 +293,11 @@ class Assets:
         The shell renders a 256 px icon with alpha, which is downscaled to the
         panel size. The older 32 px path remains as a fallback for odd targets.
         """
+        if sys.platform.startswith('linux'):
+            from platform_linux import programs
+            output = BytesIO()
+            programs.icon_image(target).save(output, format='PNG')
+            return self.import_image(base64.b64encode(output.getvalue()).decode())
         resolved = resolve_program_target(target)
         try:
             image = shell_item_image(resolved)

@@ -1,5 +1,6 @@
 """Local graphical editor for the standalone Tessera."""
 import logging
+from venv_paths import venv_python
 import argparse
 import copy
 import hashlib
@@ -230,6 +231,9 @@ def installed_programs():
 
 def scan_programs():
     """Return local Start-menu and taskbar shortcuts without launching anything."""
+    if sys.platform.startswith('linux'):
+        from platform_linux import programs
+        return programs.scan()
     if os.name != 'nt':
         return []
     roots = [
@@ -435,6 +439,8 @@ class Editor:
         allowed = {item['target'] for item in programs}
         if allowed_only and target not in allowed:
             raise ValueError('The program is not in the local program list')
+        if sys.platform.startswith('linux'):
+            return self.linux_program_details(target, programs)
         store_app = target.startswith('shell:AppsFolder\\')
         if not store_app and (not path.is_file() or path.suffix.lower() not in ('.exe', '.lnk', '.cmd', '.bat')):
             raise ValueError('Choose a local program file or shortcut')
@@ -451,6 +457,20 @@ class Editor:
         except (ValueError, OSError):
             icon = 'folder'
         return {'name': matched['name'] if matched else path.stem, 'target': target, 'process': process,
+                'icon': icon, 'reuse': bool(process)}
+
+    def linux_program_details(self, target, programs):
+        from platform_linux import programs as menu
+        info = menu.parse(Path(target)) if target.endswith('.desktop') else None
+        if info is None:
+            raise ValueError('Choose a program of the application menu')
+        process = menu.process_name(info['exec'])
+        try:
+            icon = self.assets.import_program_icon(target)['id']
+        except (ValueError, OSError):
+            icon = 'folder'
+        matched = next((item for item in programs if item['target'] == target), None)
+        return {'name': matched['name'] if matched else info['name'], 'target': target, 'process': process,
                 'icon': icon, 'reuse': bool(process)}
 
     def icon_preferences(self, data=None):
@@ -625,7 +645,7 @@ class Editor:
         import claude_setup
         if 'events' not in data and 'permission' not in data:
             return claude_setup.state()
-        python = ROOT / 'host/.venv/Scripts/python.exe'
+        python = venv_python(ROOT)
         return claude_setup.update(data.get('events'), data.get('permission'), python if python.is_file() else Path(sys.executable),
                                    ROOT / 'host/deckctl.py')
 

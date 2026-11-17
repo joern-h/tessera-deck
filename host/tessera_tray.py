@@ -5,6 +5,7 @@ and opens the editor on a click.
 """
 
 import json
+from venv_paths import venv_python
 import logging
 import os
 import subprocess
@@ -181,7 +182,7 @@ class TrayApp:
         if now - getattr(self, 'editor_asked', -10.0) < 2.0:  # a double click is one request
             return
         self.editor_asked = now
-        pythonw = ROOT / 'host/.venv/Scripts/pythonw.exe'
+        pythonw = venv_python(ROOT, True)
         executable = str(pythonw if pythonw.is_file() else sys.executable)
         flags = (subprocess.CREATE_NO_WINDOW | subprocess.DETACHED_PROCESS) if os.name == 'nt' else 0
         subprocess.Popen([executable, str(ROOT / 'host/tessera_app.py'), '--editor'], cwd=ROOT, creationflags=flags)
