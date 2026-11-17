@@ -530,7 +530,7 @@ class Editor:
             espressif = sorted(host_runtime._espressif_ports())
         except (ImportError, OSError):
             installed, espressif = {}, []
-        ports = [port for port in host_runtime.candidate_ports(os.environ.get('TESSERA_PORT', 'COM4'),
+        ports = [port for port in host_runtime.candidate_ports(os.environ.get('TESSERA_PORT', host_runtime.DEFAULT_PORT),
                                                                ROOT / 'host/deck-device.local.json', installed, espressif)
                  if port in installed]
         rejected = set()

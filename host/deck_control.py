@@ -10,6 +10,7 @@ import psutil
 import config_store
 from config_store import write_atomic
 import secrets_store
+from host_runtime import DEFAULT_PORT
 
 ROOT = Path(__file__).resolve().parents[1]
 MAX_LOG_BYTES = 5 * 1024 * 1024
@@ -135,7 +136,7 @@ class Controller:
     def status(self):
         processes = self.processes()
         result = {'running': bool(processes), 'connection': 'The host has stopped',
-                  'device': {'connected': False, 'port': os.environ.get('TESSERA_PORT', 'COM4')}}
+                  'device': {'connected': False, 'port': os.environ.get('TESSERA_PORT', DEFAULT_PORT)}}
         if not processes:
             return result
         result['connection'] = 'Waiting for the panel'
@@ -170,7 +171,7 @@ class Controller:
         if self.processes():
             emit('The deck host is already running.')
             return
-        port = os.environ.get('TESSERA_PORT', 'COM4')
+        port = os.environ.get('TESSERA_PORT', DEFAULT_PORT)
         from tesserad import Daemon, shift_logs
         profiles = ROOT / 'host/profiles.json'
         log_path = ROOT / 'host/deck.local.log'

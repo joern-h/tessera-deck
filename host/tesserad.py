@@ -33,7 +33,7 @@ from deck_assets import Assets
 from program_locator import locate
 from substitution import check_web_url, expand_environment, substitute
 from pc_state import PcState, control_audio, control_media
-from host_runtime import InstanceLock, SuspendableRLock, candidate_ports, remember_port, session_locked
+from host_runtime import DEFAULT_PORT, InstanceLock, SuspendableRLock, candidate_ports, remember_port, session_locked
 from system_stats import SystemStats, gauge_state
 
 # The engine's building blocks live in their own modules; the names stay importable from here for the apps,
@@ -1070,7 +1070,7 @@ class Daemon(DisplayMixin, BackgroundMixin, PressMixin):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--port', default='COM4')
+    parser.add_argument('--port', default=DEFAULT_PORT)
     parser.add_argument('--profiles', default=str(Path(__file__).with_name('profiles.json')))
     parser.add_argument('--no-focus', action='store_true')
     parser.add_argument('--selftest', '--validate', dest='validate', action='store_true',

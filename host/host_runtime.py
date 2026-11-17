@@ -10,6 +10,7 @@ CH340_VID = 0x1A86  # the UART bridge of the ESP32-8048S070 board
 PANEL_VIDS = (ESPRESSIF_VID, CH340_VID)
 UART_BAUD = 921600  # firmware UART speed on the CH340 board; USB Serial/JTAG ignores the baud rate
 DEFAULT_BAUD = 115200
+DEFAULT_PORT = 'COM4' if os.name == 'nt' else ''  # Linux has no fixed port name: the panel is found by its USB id
 
 
 class SuspendableRLock:
@@ -153,7 +154,7 @@ def candidate_ports(requested, state_path, installed=None, espressif=None):
         others = espressif if espressif is not None else _espressif_ports()
     except (ImportError, OSError):
         others = []
-    return [first] + [device for device in sorted(others) if device != first]
+    return ([first] if first else []) + [device for device in sorted(others) if device != first]
 
 
 def _remembered(state_path, key):
