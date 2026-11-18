@@ -159,3 +159,14 @@ def launch(target: str) -> None:
         raise OSError(f'{command[0]} is not installed')
     subprocess.Popen(command, stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
                      start_new_session=True)
+
+
+def script_command(script: str):
+    """The command that runs a script file (the interpreters Linux has)."""
+    from platform_linux import scripts
+    return scripts.command(script)
+
+
+def locate(target: str, *_, **__) -> None:
+    """Windows finds a program that moved; the application menu does not need that here."""
+    return None

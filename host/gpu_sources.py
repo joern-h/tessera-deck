@@ -9,7 +9,7 @@ from __future__ import annotations
 import os
 import shutil
 import subprocess
-from platform_windows.process_flags import NO_WINDOW
+from process_flags import NO_WINDOW
 import time
 
 NVIDIA_QUERY = 'temperature.gpu,power.draw,fan.speed,clocks.gr,utilization.gpu'

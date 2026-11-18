@@ -2,23 +2,13 @@
 from __future__ import annotations
 
 import os
-import sys
 import re
 import shutil
 
 from action_runner import script_path
-from platform_windows.programs import locate, script_command as windows_script_command
+from desktop import locate, script_command
 from input_common import split_hotkey
 from substitution import ENV_REFERENCE, check_web_url, expand_environment, substitute
-
-
-def script_command(path):
-    """The command a script step would run: Linux interpreters for the types Linux runs, the original logic otherwise."""
-    if sys.platform.startswith('linux'):
-        from platform_linux import scripts
-        if os.path.splitext(path)[1].lower() in scripts.SUPPORTED:
-            return scripts.command(path)
-    return windows_script_command(path)
 
 
 MAX_TEXT = 90

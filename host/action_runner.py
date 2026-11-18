@@ -2,14 +2,11 @@
 from __future__ import annotations
 
 import os
-import signal
 import subprocess
-import sys
 import tempfile
 import threading
 import time
-from platform_support import IS_WINDOWS
-from platform_windows.process_flags import NEW_PROCESS_GROUP, NO_WINDOW
+from platform_support import load
 
 POLL_SECONDS = 0.1
 STDERR_TAIL = 200
@@ -27,14 +24,7 @@ def kill_tree(process: subprocess.Popen) -> None:
     """Stop a command and everything it started; `shell=True` alone only kills the shell."""
     if process.poll() is not None:
         return
-    if IS_WINDOWS:
-        from platform_windows.processes import kill_tree as windows_kill_tree
-        windows_kill_tree(process.pid)
-    else:
-        try:  # the command runs in its own session (see run_command), so its whole group goes, not just the shell
-            os.killpg(process.pid, signal.SIGKILL)
-        except (ProcessLookupError, PermissionError):
-            process.kill()
+    load('processes').kill_tree(process.pid)  # the command runs in its own group or session (spawn_options)
     try:
         process.wait(timeout=2)
     except subprocess.TimeoutExpired:
@@ -43,12 +33,10 @@ def kill_tree(process: subprocess.Popen) -> None:
 
 def run_command(command, timeout: float, stop: threading.Event, shell: bool = True, cwd: str | None = None) -> None:
     """Run `command` until it exits, `timeout` passes or `stop` is set; raises CommandFailed otherwise."""
-    flags = NO_WINDOW | NEW_PROCESS_GROUP
     # stderr goes to a file, not a pipe: a program launched with `start` inherits a pipe and would hold it open
     with tempfile.TemporaryFile() as errors:
         process = subprocess.Popen(command, shell=shell, stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
-                                   stderr=errors, creationflags=flags, cwd=cwd,
-                                   start_new_session=not IS_WINDOWS)
+                                   stderr=errors, cwd=cwd, **load('processes').spawn_options())
         deadline = time.monotonic() + timeout
         try:
             while True:
@@ -99,9 +87,4 @@ def run_script(script: str, timeout: float, stop: threading.Event) -> None:
 def edit_script(script: str) -> None:
     """Open a script in the user's editor: the file type's edit verb, else Notepad."""
     path = script_path(script)
-    if sys.platform.startswith('linux'):  # the desktop's editor for the file type
-        from desktop import open_path
-        open_path(path)
-        return
-    from platform_windows.processes import edit_script as windows_edit_script
-    windows_edit_script(path)
+    load('processes').edit_script(path)

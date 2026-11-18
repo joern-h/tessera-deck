@@ -13,7 +13,8 @@ import json
 import os
 import re
 import subprocess
-from platform_windows.process_flags import NO_WINDOW
+from platform_support import load
+from process_flags import NO_WINDOW
 import sys
 import threading
 import time
@@ -319,7 +320,7 @@ class PluginManager:
         process = current['process']
         if process.poll() is None:
             from action_runner import kill_tree
-            if os.name == 'nt' and isinstance(process, subprocess.Popen):
+            if load('processes').STOP_BY_KILLING_TREE and isinstance(process, subprocess.Popen):
                 kill_tree(process)  # terminate() ends only the plugin itself and would leave its child processes running
             else:
                 process.terminate()

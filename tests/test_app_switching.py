@@ -8,7 +8,8 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / 'host'))
 import tesserad as deck
 import host_support  # noqa: E402
-from platform_windows.input import is_neutral_window as windows_neutral_window
+from platform_windows.input import is_neutral_window as windows_neutral_window, real_app_exe as windows_real_app_exe
+from platform_marks import windows_only
 from system_stats import select_presentmon_fps
 
 
@@ -48,17 +49,18 @@ class NeutralWindowTests(unittest.TestCase):
                 self.assertFalse(windows_neutral_window(context(exe, title)))
 
 
+@windows_only
 class StoreAppTests(unittest.TestCase):
     def test_a_frame_host_window_is_the_app_inside_it(self):
-        self.assertEqual(deck.real_app_exe('applicationframehost.exe', ['applicationframehost.exe', '', 'calculatorapp.exe']),
+        self.assertEqual(windows_real_app_exe('applicationframehost.exe', ['applicationframehost.exe', '', 'calculatorapp.exe']),
                          'calculatorapp.exe')
 
     def test_a_frame_host_without_a_visible_app_stays_the_frame_host(self):
-        self.assertEqual(deck.real_app_exe('applicationframehost.exe', ['applicationframehost.exe']),
+        self.assertEqual(windows_real_app_exe('applicationframehost.exe', ['applicationframehost.exe']),
                          'applicationframehost.exe')
 
     def test_other_programs_are_left_alone(self):
-        self.assertEqual(deck.real_app_exe('chrome.exe', ['chrome.exe', 'other.exe']), 'chrome.exe')
+        self.assertEqual(windows_real_app_exe('chrome.exe', ['chrome.exe', 'other.exe']), 'chrome.exe')
 
 
 class SwitchingTests(unittest.TestCase):

@@ -24,12 +24,16 @@ SHARED_FUNCTIONS = {
     'autostart': ['startup_script_path', 'is_enabled', 'enable'],
     'shell': ['scan_programs', 'shortcut_target'],
     'editor_window': ['activate_window', 'brand_taskbar_identity', 'open_native_window'],
-    'programs': ['describe'],
+    'programs': ['describe', 'script_command', 'locate'],
+    'processes': ['kill_tree', 'spawn_options', 'open_path', 'open_target', 'edit_script', 'notification_beep'],
+    'files': ['make_private'],
     'input': ['bring_to_front', 'focus_existing_process', 'foreground_context', 'is_neutral_window', 'matches_foreground',
               'process_window', 'send_hotkey', 'send_mouse', 'send_text', 'set_clipboard', 'window_action'],
 }
 # module -> the constants the shared code reads on both systems
-SHARED_CONSTANTS = {'labels': ['MODULE_PROBE', 'AUTOSTART_NAME', 'SHORTCUT_NAME', 'LAUNCHER', 'ASKS_ABOUT_AUTOSTART']}
+SHARED_CONSTANTS = {'processes': ['STOP_BY_KILLING_TREE'],
+                    'process_flags': ['NO_WINDOW', 'NEW_PROCESS_GROUP', 'DETACHED', 'NEW_CONSOLE'],
+                    'labels': ['MODULE_PROBE', 'AUTOSTART_NAME', 'SHORTCUT_NAME', 'LAUNCHER', 'ASKS_ABOUT_AUTOSTART']}
 FCNTL = re.compile(r'^\s*(?:import fcntl|from fcntl\b)', re.MULTILINE)
 
 
@@ -93,6 +97,38 @@ class ParityTests(unittest.TestCase):
         import desktop
         for name in SHARED_FUNCTIONS['input']:
             self.assertTrue(hasattr(desktop, name), name)
+
+
+ISOLATION_PROBE = """
+import importlib, json, sys
+other = sys.argv[1]
+sys.modules[other] = None  # any import of the other system's package now raises ImportError
+sys.path.insert(0, 'host')
+found = {}
+for name in sys.argv[2:]:
+    try:
+        importlib.import_module(name)
+    except ImportError as exc:
+        if other in str(exc):
+            found[name] = str(exc)
+    except Exception:
+        pass  # a missing optional library or a display is not what this checks
+print(json.dumps(found))
+"""
+# modules that start work or a window when imported
+NOT_IMPORTED = {'start_host', 'deckctl', 'tessera_terminal', 'editor_file_picker'}
+
+
+class IsolationTests(unittest.TestCase):
+    def test_no_shared_module_imports_the_other_systems_package(self):
+        """A Linux start never imports platform_windows and a Windows start never imports platform_linux."""
+        other = 'platform_linux' if platform_support.IS_WINDOWS else 'platform_windows'
+        names = sorted(path.stem for path in (ROOT / 'host').glob('*.py') if path.stem not in NOT_IMPORTED)
+        result = subprocess.run([sys.executable, '-I', '-c', ISOLATION_PROBE, other, *names], cwd=ROOT,
+                                capture_output=True, text=True, timeout=120)
+        self.assertEqual(result.returncode, 0, result.stderr[-500:])
+        import json
+        self.assertEqual(json.loads(result.stdout.splitlines()[-1]), {})
 
 
 class LayeringTests(unittest.TestCase):

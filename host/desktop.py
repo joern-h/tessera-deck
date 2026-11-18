@@ -4,7 +4,7 @@ Windows: platform_windows/input.py. Linux: platform_linux, which picks the backe
 Wayland has a place in platform_linux/wayland.py). The rest of the host imports these names from here. The key names, the
 operation lists and the rest of the shared vocabulary are in input_common.
 """
-from platform_support import IS_LINUX
+from platform_support import IS_LINUX, load
 
 if IS_LINUX:
     from platform_linux.input import (bring_to_front, focus_existing_process, foreground_context,  # noqa: F401
@@ -18,19 +18,20 @@ else:
 
 def open_path(path) -> None:
     """Open a file or folder with the program the system has for it (Windows: os.startfile; Linux: xdg-open)."""
-    if IS_LINUX:
-        from platform_linux.programs import launch
-        launch(str(path))
-    else:
-        from platform_windows.processes import open_path as windows_open_path
-        windows_open_path(path)
+    load('processes').open_path(path)
+
+
+def open_target(target: str) -> None:
+    """Open a file, folder, address or program the way an `open` action does."""
+    load('processes').open_target(target)
 
 
 def script_command(script: str):
     """The command that runs a script file: Windows picks by extension (py launcher, cmd, AutoHotkey ...), Linux
     uses the interpreters it has (python3, bash, node, pwsh)."""
-    if IS_LINUX:
-        from platform_linux import scripts
-        return scripts.command(script)
-    from platform_windows.programs import script_command as windows_script_command
-    return windows_script_command(script)
+    return load('programs').script_command(script)
+
+
+def locate(target: str):
+    """Where a program that moved is now (Windows: App Paths, the Program Files folders); None when not found."""
+    return load('programs').locate(target)

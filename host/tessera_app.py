@@ -1,6 +1,6 @@
 """Local graphical editor for the standalone Tessera."""
 from default_profile import seed_path
-from platform_windows.process_flags import NEW_CONSOLE, NO_WINDOW
+from process_flags import NEW_CONSOLE, NO_WINDOW
 from desktop import open_path
 from platform_support import load
 from venv_paths import venv_python

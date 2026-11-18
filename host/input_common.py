@@ -3,7 +3,6 @@
 The key names are the vocabulary of profiles ("ctrl+shift+t", "volumeup"). Each system turns them into its own codes
 (platform_windows/input.py: Windows virtual-key codes; platform_linux/x11.py: X keysyms). Nothing here touches the system.
 """
-import os
 import time
 
 import psutil

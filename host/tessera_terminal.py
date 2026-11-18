@@ -17,7 +17,7 @@ from textual.binding import Binding
 from textual.containers import Horizontal, Vertical, VerticalScroll, Grid
 from textual.screen import ModalScreen
 from textual.widgets import Button, DataTable, Footer, Header, Input, Select, Static, TabbedContent, TabPane
-from platform_windows.process_flags import NO_WINDOW
+from process_flags import NO_WINDOW
 
 
 ACTION_FIELDS = {'hotkey': ('keys', 'ctrl+shift+b'), 'text': ('text', 'Text to type'),
@@ -123,8 +123,8 @@ class ActionEditor(ModalScreen):
                 if kind in ('press', 'state') and not 1 <= value <= 18:
                     raise ValueError('The button number must be 1-18')
             if kind == 'hotkey':
-                from tesserad import parse_hotkey
-                parse_hotkey(value)
+                from input_common import split_hotkey
+                split_hotkey(value)
             action = copy.deepcopy(self.draft) if kind == self.draft['type'] else {}
             action = {'type': kind} if ACTION_FIELDS[kind][0] is None else dict(action, type=kind, **{ACTION_FIELDS[kind][0]: value})
             if kind == 'http':

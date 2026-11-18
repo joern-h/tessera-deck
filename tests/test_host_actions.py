@@ -284,7 +284,8 @@ class ScriptStepTests(unittest.TestCase):
         self.assertTrue(result['ok'])
         self.assertIn('node.exe', result['steps'][0]['text'])
         batch = self.make('t 1.bat')
-        self.assertIn('with cmd (', preview([{'type': 'script', 'path': batch}], {})['steps'][0]['text'])
+        with patch('action_preview.script_command', return_value=f'"{batch}"'):  # a batch file is one command line for cmd
+            self.assertIn('with cmd (', preview([{'type': 'script', 'path': batch}], {})['steps'][0]['text'])
         missing = preview([{'type': 'script', 'path': str(Path(self.folder.name) / 'none.js')}], {})
         self.assertFalse(missing['ok'])
         self.assertIn('not found', missing['steps'][0]['text'])

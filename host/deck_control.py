@@ -3,7 +3,7 @@ import json
 import os
 from pathlib import Path
 import subprocess
-from platform_windows.process_flags import NO_WINDOW
+from process_flags import NO_WINDOW
 import sys
 import time
 import psutil

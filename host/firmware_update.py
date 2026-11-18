@@ -17,7 +17,7 @@ import hashlib
 import json
 import re
 import subprocess
-from platform_windows.process_flags import NO_WINDOW
+from process_flags import NO_WINDOW
 import time
 import sys
 import tempfile

@@ -9,7 +9,7 @@ import os
 from pathlib import Path
 import queue
 import shutil
-import subprocess
+import subprocess  # noqa: F401  (the tests patch deck.subprocess)
 import sys
 import threading
 import time
@@ -23,14 +23,13 @@ from plugins import EventLog, PluginManager
 from live_state import LiveState
 import widgets
 from action_runner import Busy, CommandFailed, run_command, run_script
-from action_preview import URI_SCHEME, toggled
+from action_preview import toggled
 from control_api import ControlServer
 import agent_activity
 from datetime import datetime
 import cockpit
 import permission
 from deck_assets import Assets
-from platform_windows.programs import locate
 from substitution import check_web_url, expand_environment, substitute
 from pc_state import PcState
 from system_audio import MediaReader, control_audio, control_media, read_audio
@@ -40,10 +39,9 @@ from system_stats import SystemStats, gauge_state
 # The engine's building blocks live in their own modules; the names stay importable from here for the apps,
 # the tools and the tests.
 from input_common import CHILD_NAMES_SECONDS, IS_WINDOWS, child_names, dry_hotkey  # noqa: F401
-from platform_windows.input import VK, parse_hotkey, real_app_exe  # noqa: F401
 from default_profile import seed_path
 from desktop import (bring_to_front, focus_existing_process, foreground_context, is_neutral_window,  # noqa: F401
-                     matches_foreground, send_hotkey, send_mouse, send_text, set_clipboard, window_action)
+                     matches_foreground, open_target, send_hotkey, send_mouse, send_text, set_clipboard, window_action)
 from config_check import BETA_STEP, _check_display, in_quiet_hours, validate_config  # noqa: F401
 from daemon_display import DisplayMixin
 from daemon_presses import DOUBLE_PRESS_SECONDS, PressMixin  # noqa: F401
@@ -517,17 +515,8 @@ class Daemon(DisplayMixin, BackgroundMixin, PressMixin):
                     send_text(text)
         elif kind == 'open':
             target = self.substitute(action['target'])
-            if IS_WINDOWS:
-                process = action.get('process', '')
-                if not (action.get('reuse', False) and focus_existing_process(process)):
-                    # %NAME% only in a path: in an address it would send this PC's environment to the site
-                    expanded = target if URI_SCHEME.match(target) else os.path.expandvars(target)
-                    from platform_windows.processes import open_target
-                    open_target(expanded, locate)
-            else:
-                from platform_linux import programs
-                if not (action.get('reuse', False) and focus_existing_process(action.get('process', ''))):
-                    programs.launch(target)
+            if not (action.get('reuse', False) and focus_existing_process(action.get('process', ''))):
+                open_target(target)
         elif kind == 'shell':
             command, timeout = self.substitute(action['command'], 'shell'), action.get('timeout', 30)
             with self.state_lock.suspended():  # the panel and API stay responsive while it runs

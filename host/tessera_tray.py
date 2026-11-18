@@ -21,7 +21,7 @@ from PIL import Image, ImageDraw
 
 from deck_control import (ROOT, Controller, autostart_enabled, firmware_installing, save_profiles, set_autostart, stop_editor,
                           startup_script_path)
-from platform_windows.process_flags import DETACHED, NO_WINDOW
+from process_flags import DETACHED, NO_WINDOW
 from host_runtime import InstanceLock
 
 log = logging.getLogger(__name__)
