@@ -1,4 +1,5 @@
 """The right-click menu of the Linux tray icon: what it lists, how clicks are routed, and a real Tk menu on Xvfb."""
+import json
 import os
 from pathlib import Path
 import shutil
@@ -8,6 +9,7 @@ import threading
 import time
 import types
 import unittest
+import unittest.mock
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / 'host'))
@@ -123,6 +125,116 @@ class RealMenuTests(unittest.TestCase):
         self.assertEqual(calls, ['stop'])
         time.sleep(0.5)
         self.assertTrue(tray._open.acquire(blocking=False))  # the menu closed and can open again
+
+
+@unittest.skipIf(pystray is None, 'needs pystray')
+class PathTests(unittest.TestCase):
+    def test_rows_go_to_the_helper_without_the_items_and_a_path_finds_the_item_again(self):
+        rows = tray_menu.describe(fake_icon([]).menu, pystray.Menu.SEPARATOR)
+        wire = tray_menu.plain(rows)
+        self.assertNotIn('item', json.dumps(wire))
+        self.assertEqual([row.get('text', '---') for row in wire[5]['submenu']], ['A', 'B'])
+        self.assertEqual(str(tray_menu.pick(rows, '3').text), 'Stop host')
+        self.assertEqual(str(tray_menu.pick(rows, '5.1').text), 'B')
+        for bad in ('', 'x', '99', '5.9', '3.0'):
+            self.assertIsNone(tray_menu.pick(rows, bad), bad)
+
+    def test_the_gtk_python_is_found_once_and_never_the_virtual_environment(self):
+        saved = list(tray_menu._gtk_python)
+        tray_menu._gtk_python.clear()
+        self.addCleanup(lambda: (tray_menu._gtk_python.clear(), tray_menu._gtk_python.extend(saved)))
+        calls = []
+
+        def run(command, **kwargs):
+            calls.append(command[0])
+            return types.SimpleNamespace(returncode=0 if command[0] == '/usr/bin/python3' else 1)
+        with unittest.mock.patch.object(tray_menu.os.path, 'isfile', return_value=True):
+            self.assertEqual(tray_menu.gtk_python(run), '/usr/bin/python3')
+            self.assertEqual(tray_menu.gtk_python(run), '/usr/bin/python3')
+        self.assertEqual(calls, ['/usr/bin/python3'])  # probed once, then remembered
+
+
+GTK_PYTHON = tray_menu.gtk_python() if pystray is not None and sys.platform.startswith('linux') else None
+
+
+@unittest.skipUnless(GTK_PYTHON and shutil.which('Xvfb') and shutil.which('xdotool'), 'needs a Python with GTK, Xvfb and xdotool')
+class GtkHelperTests(unittest.TestCase):
+    """The helper process in a private X server: what it prints for the keys and clicks a person would use."""
+    ROWS = {'x': 300, 'y': 700, 'rows': [
+        {'text': 'Status', 'enabled': False, 'checked': None, 'radio': False},
+        {'separator': True},
+        {'text': 'Open', 'enabled': True, 'checked': None, 'radio': False, 'default': True},
+        {'text': 'Stop', 'enabled': True, 'checked': None, 'radio': False},
+        {'text': 'Auto', 'enabled': True, 'checked': True, 'radio': False},
+        {'text': 'Level', 'enabled': True, 'checked': None, 'radio': False, 'submenu': [
+            {'text': '50%', 'enabled': True, 'checked': False, 'radio': True},
+            {'text': '100%', 'enabled': True, 'checked': True, 'radio': True}]}]}
+
+    @classmethod
+    def setUpClass(cls):
+        cls.server = subprocess.Popen(['Xvfb', '-displayfd', '1', '-screen', '0', '1280x800x24'], stdout=subprocess.PIPE,
+                                      stderr=subprocess.DEVNULL, text=True)
+        cls.env = dict(os.environ, DISPLAY=':' + cls.server.stdout.readline().strip())
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.server.terminate()
+        cls.server.wait(5)
+
+    def choose(self, *keys, click=False):
+        helper = subprocess.Popen([GTK_PYTHON, str(tray_menu.HELPER)], stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+                                  stderr=subprocess.DEVNULL, text=True, env=self.env)
+        helper.stdin.write(json.dumps(self.ROWS))
+        helper.stdin.close()
+        time.sleep(1.5)
+        self.assertIsNone(helper.poll(), 'the menu must stay open until someone answers it')
+        if click:
+            subprocess.run(['xdotool', 'mousemove', '1100', '100', 'click', '1'], env=self.env, check=True)
+        else:
+            subprocess.run(['xdotool', 'key', '--delay', '150', *keys], env=self.env, check=True)
+        out, _ = helper.communicate(timeout=10)
+        self.assertEqual(helper.returncode, 0)
+        return out.strip()
+
+    def test_the_arrow_keys_skip_the_status_line_and_enter_chooses(self):
+        self.assertEqual(self.choose('Down', 'Down', 'Return'), '3')  # Open, Stop
+        self.assertEqual(self.choose('Down', 'Down', 'Down', 'Return'), '4')  # a ticked entry
+
+    def test_a_submenu_entry_is_chosen_by_its_path(self):
+        self.assertEqual(self.choose('Down', 'Down', 'Down', 'Down', 'Right', 'Down', 'Return'), '5.1')
+
+    def test_escape_and_a_click_elsewhere_close_it_without_a_choice(self):
+        self.assertEqual(self.choose('Escape'), '')
+        self.assertEqual(self.choose(click=True), '')
+
+    def test_building_the_radio_and_check_entries_chooses_nothing_by_itself(self):
+        self.assertEqual(self.choose('Escape'), '')  # set_active() inside the helper must not count as a choice
+
+
+@unittest.skipUnless(pystray is not None and shutil.which('Xvfb') and shutil.which('xdotool'), 'needs pystray, Xvfb, xdotool')
+class FallbackTests(unittest.TestCase):
+    def test_without_a_python_that_has_gtk_the_tk_menu_still_works(self):
+        try:
+            import tkinter  # noqa: F401
+        except ImportError:
+            self.skipTest('needs tkinter')
+        server = subprocess.Popen(['Xvfb', '-displayfd', '1', '-screen', '0', '1024x768x24'], stdout=subprocess.PIPE,
+                                  stderr=subprocess.DEVNULL, text=True)
+        self.addCleanup(lambda: (server.terminate(), server.wait(5)))
+        display = ':' + server.stdout.readline().strip()
+        saved = os.environ.get('DISPLAY')
+        os.environ['DISPLAY'] = display
+        self.addCleanup(lambda: os.environ.__setitem__('DISPLAY', saved) if saved else os.environ.pop('DISPLAY', None))
+        calls = []
+        tray = tray_menu.TrayMenu(fake_icon(calls), pystray.Menu.SEPARATOR)
+        with unittest.mock.patch.object(tray_menu, 'gtk_python', return_value=None):
+            self.assertTrue(tray.show(200, 200))
+            time.sleep(1.0)
+            subprocess.run(['xdotool', 'key', '--delay', '150', 'Down', 'Down', 'Return'], env=dict(os.environ), check=True)
+            deadline = time.time() + 5
+            while 'stop' not in calls and time.time() < deadline:
+                time.sleep(0.1)
+        self.assertEqual(calls, ['stop'])
 
 
 if __name__ == '__main__':
