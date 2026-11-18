@@ -160,3 +160,53 @@ class NotifyTests(unittest.TestCase):
         from unittest.mock import patch
         with patch('shutil.which', return_value=None):
             self.assertFalse(notify.notify('x'))
+
+
+@unittest.skipUnless(os.name == 'posix', 'POSIX only')
+class StopEditorTests(unittest.TestCase):
+    """The tray's Quit stops an editor that runs in a browser tab, and only that process."""
+
+    def setUp(self):
+        import json
+        import subprocess
+        import psutil
+        self.folder = tempfile.TemporaryDirectory()
+        self.addCleanup(self.folder.cleanup)
+        self.script = Path(self.folder.name, 'tessera_app.py')
+        # the editor: it exits on SIGINT like the real one, and removes its record on the way out
+        self.record = Path(self.folder.name, 'editor.local.json')
+        self.script.write_text('import time\ntry:\n    time.sleep(60)\nexcept KeyboardInterrupt:\n    pass\n')
+        self.process = subprocess.Popen([sys.executable, str(self.script)])
+        self.addCleanup(lambda: self.process.poll() is None and self.process.kill())
+        time.sleep(0.4)
+        self.created = psutil.Process(self.process.pid).create_time()
+        self.write = lambda **extra: self.record.write_text(json.dumps(dict(pid=self.process.pid, created=self.created, **extra)))
+
+    def stop(self):
+        import deck_control
+        return deck_control.stop_editor(self.record, self.script, wait=3)
+
+    def test_an_editor_in_a_browser_tab_is_stopped(self):
+        self.write(browser=True)
+        self.assertTrue(self.stop())
+        self.assertIsNotNone(self.process.wait(3))
+
+    def test_an_editor_with_its_own_window_is_left_alone(self):
+        self.write()
+        self.assertFalse(self.stop())
+        self.assertIsNone(self.process.poll())
+
+    def test_a_record_that_names_another_process_or_a_reused_pid_touches_nothing(self):
+        self.write(browser=True)
+        import json
+        stale = json.loads(self.record.read_text())
+        self.record.write_text(json.dumps(dict(stale, created=stale['created'] - 100)))  # same pid, another start time
+        self.assertFalse(self.stop())
+        self.record.write_text(json.dumps(dict(stale, pid=os.getpid())))  # a live process that is not the editor
+        self.assertFalse(self.stop())
+        self.assertIsNone(self.process.poll())
+
+    def test_no_record_or_a_broken_one_is_not_an_error(self):
+        self.assertFalse(self.stop())
+        self.record.write_text('not json')
+        self.assertFalse(self.stop())
