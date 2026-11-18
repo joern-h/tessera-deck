@@ -17,6 +17,9 @@ SHARED_FUNCTIONS = {
     'media': ['MediaReader', 'control_media'],
     'session': ['locked'],
     'secrets': ['seal', 'unseal'],
+    'shortcuts': ['desktop_shortcut_path', 'create_shortcut'],
+    'dialogs': ['ask_yes_no'],
+    'tray': ['prepare'],
     'filelock': ['lock', 'unlock'],
     'autostart': ['startup_script_path', 'is_enabled', 'enable'],
     'shell': ['scan_programs', 'shortcut_target'],
@@ -25,6 +28,8 @@ SHARED_FUNCTIONS = {
     'input': ['bring_to_front', 'focus_existing_process', 'foreground_context', 'is_neutral_window', 'matches_foreground',
               'process_window', 'send_hotkey', 'send_mouse', 'send_text', 'set_clipboard', 'window_action'],
 }
+# module -> the constants the shared code reads on both systems
+SHARED_CONSTANTS = {'labels': ['MODULE_PROBE', 'AUTOSTART_NAME', 'SHORTCUT_NAME', 'LAUNCHER', 'ASKS_ABOUT_AUTOSTART']}
 FCNTL = re.compile(r'^\s*(?:import fcntl|from fcntl\b)', re.MULTILINE)
 
 
@@ -75,6 +80,14 @@ class ParityTests(unittest.TestCase):
         target = item.__init__ if inspect.isclass(item) else item
         return sum(1 for p in inspect.signature(target).parameters.values()
                    if p.name != 'self' and p.default is p.empty and p.kind not in (p.VAR_POSITIONAL, p.VAR_KEYWORD))
+
+    def test_both_packages_have_the_same_constants_of_the_same_type(self):
+        for module, names in SHARED_CONSTANTS.items():
+            windows = importlib.import_module(f'platform_windows.{module}')
+            linux = importlib.import_module(f'platform_linux.{module}')
+            for name in names:
+                with self.subTest(module=module, name=name):
+                    self.assertIsInstance(getattr(linux, name), type(getattr(windows, name)))
 
     def test_the_desktop_facade_exports_every_shared_input_name(self):
         import desktop

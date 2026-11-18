@@ -30,6 +30,8 @@ EXPECTED = {
     'platform_windows.dialogs': ['ask_yes_no'],
     'platform_windows.processes': ['kill_tree', 'edit_script', 'open_target', 'open_path', 'notification_beep'],
     'platform_windows.process_flags': ['NO_WINDOW', 'NEW_PROCESS_GROUP', 'DETACHED', 'NEW_CONSOLE'],
+    'platform_windows.labels': ['MODULE_PROBE', 'AUTOSTART_NAME', 'SHORTCUT_NAME', 'LAUNCHER', 'ASKS_ABOUT_AUTOSTART'],
+    'platform_windows.tray': ['prepare'],
     'platform_windows.regional': ['clock_format'],
     'platform_windows.filelock': ['lock', 'unlock'],
 }

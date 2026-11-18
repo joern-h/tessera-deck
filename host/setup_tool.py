@@ -8,19 +8,19 @@ from __future__ import annotations
 
 import argparse
 import hashlib
-import os
 import shutil
 import subprocess
 import sys
 from pathlib import Path
 from typing import Callable
 
+from platform_support import load
+
 ROOT = Path(__file__).resolve().parents[1]
 HASH_FILE = ROOT / 'host/.venv/requirements.sha256'
 REQUIREMENTS = ROOT / 'host/requirements.txt'
 LOCK = ROOT / 'host/requirements.lock'
-MODULE_PROBE = ('import serial, psutil, PIL, webview, pystray, keyring, jeepney, esptool' if sys.platform.startswith('linux')
-                else 'import serial, psutil, PIL, webview, win32pdh, pystray, comtypes, esptool')
+MODULE_PROBE = load('labels').MODULE_PROBE
 MINIMUM_PYTHON = (3, 11)
 # Glob patterns. profiles-*.local.json are the previous and the unreadable copies, profiles.json.*.tmp a save cut short.
 USER_DATA = ('host/profiles.json', 'host/assets', 'host/backups', 'host/state.local.json', 'host/editor.local.json',
@@ -80,23 +80,12 @@ def ensure(python: str = sys.executable, probe: Callable[[str], bool] = imports_
 
 
 def desktop_shortcut_path() -> Path:
-    if sys.platform.startswith('linux'):  # the application menu entry; it is also what a launcher bar or a search finds
-        from platform_linux import desktop_entries
-        return desktop_entries.launcher_path()
-    from platform_windows.shortcuts import desktop_shortcut_path as windows_desktop_shortcut_path
-    return windows_desktop_shortcut_path()
+    return load('shortcuts').desktop_shortcut_path()
 
 
 def create_shortcut(target: Path = ROOT / 'Tessera.cmd', link: Path | None = None) -> Path:
     """A shortcut with the Tessera icon: a Desktop .lnk on Windows, an application menu entry on Linux."""
-    link = link or desktop_shortcut_path()
-    if sys.platform.startswith('linux'):
-        from platform_linux import desktop_entries
-        target = target if target.name != 'Tessera.cmd' else target.with_name('Tessera.sh')
-        return desktop_entries.write(link, desktop_entries.entry([str(target)], target.parent,
-                                                                 target.parent / 'docs/images/logo-mark.svg'))
-    from platform_windows.shortcuts import create_shortcut as windows_create_shortcut
-    return windows_create_shortcut(target, link)
+    return load('shortcuts').create_shortcut(target, link or desktop_shortcut_path())
 
 
 def uninstall(purge: bool = False, confirm: Callable[[str], str] = input, emit: Callable[[str], None] = print,
@@ -112,13 +101,13 @@ def uninstall(purge: bool = False, confirm: Callable[[str], str] = input, emit: 
         from deck_control import set_autostart as autostart
     try:
         autostart(False)
-        removed.append('start with ' + ('Windows' if os.name == 'nt' else 'the desktop'))
+        removed.append('start with ' + load('labels').AUTOSTART_NAME)
     except OSError as exc:
         emit(f'Could not remove the autostart entry: {exc}')
     shortcut = link or desktop_shortcut_path()
     if shortcut.exists():
         shortcut.unlink()
-        removed.append('Desktop shortcut' if os.name == 'nt' else 'application menu entry')
+        removed.append(load('labels').SHORTCUT_NAME)
     if purge:
         answer = confirm('This permanently deletes your profiles, icons, backups, counters and downloads. '
                          'Type YES to continue: ').strip()
@@ -175,7 +164,7 @@ def main(argv: list[str] | None = None) -> int:
         if not ensure():
             return 1
         print(f'Shortcut: {create_shortcut()}')
-        print('Setup is done. Start Tessera from the shortcut or with ' + ('Tessera.cmd.' if os.name == 'nt' else 'Tessera.sh.'))
+        print('Setup is done. Start Tessera from the shortcut or with ' + (load('labels').LAUNCHER + '.'))
         return 0
     if args.command == 'uninstall':
         try:

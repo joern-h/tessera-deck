@@ -6,6 +6,7 @@ and opens the editor on a click.
 
 import json
 from desktop import open_path
+from platform_support import load
 from venv_paths import venv_python
 import logging
 import os
@@ -168,11 +169,7 @@ class TrayApp:
         self.asked_autostart = FIRST_RUN_PATH.exists()  # the question waits for the first panel connection
         self.icon = pystray.Icon('tessera', make_icon('stopped'), 'Tessera',
                                  menu=pystray.Menu(self.menu_items))
-        if sys.platform.startswith('linux'):  # the X11 tray cannot show balloons: use the desktop's notifications
-            from platform_linux.notify import notify
-            self.icon.notify = lambda message, title=None: notify(message, title or 'Tessera')
-            from platform_linux import tray_menu
-            tray_menu.attach(self.icon, pystray.Menu.SEPARATOR)  # the X11 tray has no menu of its own
+        load('tray').prepare(self.icon, pystray.Menu.SEPARATOR)
 
     # --- actions (all run off the UI thread) ---------------------------------
     def background(self, work, *args):
@@ -287,7 +284,7 @@ class TrayApp:
         """Once per folder, at the first panel connection: the panel does nothing after a restart until Tessera runs, so
         ask. A record copied over with the *.local.json files from the folder before an update does not count while
         Start with Windows still starts that folder."""
-        if os.name != 'nt':
+        if not load('labels').ASKS_ABOUT_AUTOSTART:
             return
         try:
             elsewhere = startup_script_path().is_file() and not autostart_enabled()
@@ -303,8 +300,7 @@ class TrayApp:
             question = f'Start with Windows starts Tessera from another folder. Start this copy instead?\n\n{ROOT}'
         else:
             question = 'Start Tessera when you sign in to Windows?\n\nThe panel then works after every restart.'
-        from platform_windows.dialogs import ask_yes_no
-        if ask_yes_no(question + '\n\nYou can change this later in the tray menu: Start with Windows.', 'Tessera'):
+        if load('dialogs').ask_yes_no(question + '\n\nYou can change this later in the tray menu: Start with Windows.', 'Tessera'):
             set_autostart(True)
 
     def quit(self, *_):
@@ -356,7 +352,7 @@ class TrayApp:
         yield pystray.MenuItem('Restart host', self.restart_host, enabled=running)
         yield pystray.MenuItem('Stop host', self.stop_host, enabled=running)
         yield pystray.Menu.SEPARATOR
-        yield pystray.MenuItem('Start with Windows' if os.name == 'nt' else 'Start with the desktop', self.toggle_autostart, checked=lambda item: autostart_enabled())
+        yield pystray.MenuItem('Start with ' + load('labels').AUTOSTART_NAME, self.toggle_autostart, checked=lambda item: autostart_enabled())
         yield pystray.MenuItem('Show notifications', self.toggle_notifications, checked=lambda item: notifications_enabled())
         yield pystray.MenuItem('Help', pystray.Menu(
             pystray.MenuItem('Open the host log', self.open_log),
