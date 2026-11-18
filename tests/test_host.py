@@ -9,6 +9,7 @@ from unittest.mock import Mock, patch
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / 'host'))
+from platform_marks import windows_only  # noqa: E402
 import tesserad as deck
 from platform_windows import input as win_input
 from system_stats import select_hwinfo_metrics
@@ -298,6 +299,7 @@ class HostTests(HostCase):
         daemon.assets.icon_for.return_value = 'im:0123456789ab'
         self.assertEqual(daemon.resolve_icon({'icon': 'app'}), 'im:0123456789ab')
 
+    @windows_only
     def test_program_targets_resolve_aliases_and_variables(self):
         from platform_windows.icons import resolve_program_target
         self.assertIn('WindowsTerminal', resolve_program_target('wt.exe'))
@@ -309,6 +311,7 @@ class HostTests(HostCase):
         with self.assertRaises(ValueError):
             resolve_program_target('  ')
 
+    @windows_only
     def test_an_app_icon_is_never_looked_up_on_a_network_share_or_url(self):
         # The lookup runs on every push, so an imported key could otherwise leak the NTLM sign-in to any host.
         from deck_assets import is_remote_target

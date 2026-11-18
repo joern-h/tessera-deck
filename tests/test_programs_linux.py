@@ -1,4 +1,9 @@
 """Linux program list: .desktop parsing, process names from Exec lines, icon lookup and launching."""
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from platform_marks import linux_only_module
+linux_only_module(__name__)
 import os
 from pathlib import Path
 import sys

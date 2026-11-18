@@ -1,4 +1,9 @@
 """The Linux desktop backends: session choice, the key vocabulary, the commands they build, and X11 for real."""
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from platform_marks import linux_only_module
+linux_only_module(__name__)
 import os
 from pathlib import Path
 import shutil

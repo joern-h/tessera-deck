@@ -1,4 +1,9 @@
 """Linux session pieces: the screen lock state, and that a timed-out command takes its children with it."""
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from platform_marks import linux_only_module
+linux_only_module(__name__)
 import os
 from pathlib import Path
 import sys

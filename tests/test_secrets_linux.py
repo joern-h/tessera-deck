@@ -1,4 +1,9 @@
 """Plugin secrets in the system keyring (Linux). A fake keyring stands in: the tests never touch the real one."""
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from platform_marks import linux_only_module
+linux_only_module(__name__)
 import json
 from pathlib import Path
 import sys

@@ -1,4 +1,9 @@
 """The right-click menu of the Linux tray icon: what it lists, how clicks are routed, and a real Tk menu on Xvfb."""
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from platform_marks import linux_only_module
+linux_only_module(__name__)
 import json
 import os
 from pathlib import Path
