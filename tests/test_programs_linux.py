@@ -1,4 +1,5 @@
 """Linux program list: .desktop parsing, process names from Exec lines, icon lookup and launching."""
+import os
 from pathlib import Path
 import sys
 import tempfile
@@ -102,3 +103,45 @@ class EntryTests(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+
+class ScriptTests(unittest.TestCase):
+    def test_each_script_type_gets_its_interpreter(self):
+        from platform_linux import scripts
+        which = lambda name: f'/usr/bin/{name}' if name in ('python3', 'bash', 'node', 'pwsh') else None
+        self.assertEqual(scripts.command('/x/a.py', which), ['/usr/bin/python3', '/x/a.py'])
+        self.assertEqual(scripts.command('/x/a.PYW', which), ['/usr/bin/python3', '/x/a.PYW'])
+        self.assertEqual(scripts.command('/x/a.sh', which), ['/usr/bin/bash', '/x/a.sh'])
+        self.assertEqual(scripts.command('/x/a.js', which), ['/usr/bin/node', '/x/a.js'])
+        self.assertEqual(scripts.command('/x/a.ps1', which), ['/usr/bin/pwsh', '-NoProfile', '-NonInteractive', '-File', '/x/a.ps1'])
+
+    def test_a_missing_interpreter_and_a_windows_only_type_say_so(self):
+        from platform_linux import scripts
+        nothing = lambda name: None
+        with self.assertRaisesRegex(ValueError, 'Node.js'):
+            scripts.command('/x/a.js', nothing)
+        with self.assertRaisesRegex(ValueError, 'pwsh'):
+            scripts.command('/x/a.ps1', nothing)
+        for name in ('/x/a.bat', '/x/a.cmd', '/x/a.ahk', '/x/noext'):
+            with self.assertRaisesRegex(ValueError, 'not supported on Linux'):
+                scripts.command(name, nothing)
+        self.assertEqual(scripts.command('/x/a.py', nothing)[0], sys.executable)  # the host's own Python as the last resort
+        with self.assertRaisesRegex(ValueError, 'shell'):
+            scripts.command('/x/a.sh', nothing)
+
+    @unittest.skipUnless(sys.platform.startswith('linux'), 'Linux only')
+    def test_the_host_uses_it_and_accepts_sh_scripts(self):
+        import desktop
+        import program_locator
+        self.assertIn('.sh', program_locator.SCRIPT_SUFFIXES)
+        command = desktop.script_command('/x/a.sh')
+        self.assertEqual((os.path.basename(command[0]) in ('bash', 'sh'), command[1]), (True, '/x/a.sh'))
+
+
+class OpenPathTests(unittest.TestCase):
+    @unittest.skipUnless(sys.platform.startswith('linux'), 'Linux only')
+    def test_a_path_is_opened_with_xdg_open(self):
+        import desktop
+        with patch('shutil.which', side_effect=lambda name: '/usr/bin/' + name), patch('subprocess.Popen') as popen:
+            desktop.open_path(Path('/home/a/host.log'))
+        self.assertEqual(popen.call_args.args[0], ['xdg-open', '/home/a/host.log'])

@@ -129,5 +129,63 @@ class MediaTests(unittest.TestCase):
         self.assertEqual(media.choose([]), media.EMPTY)
 
 
+class FakeBus:
+    """Answers the D-Bus calls of media.control_media and remembers the Set calls."""
+
+    def __init__(self, players):
+        self.players, self.sets, self.closed = players, [], False
+
+    def close(self):
+        self.closed = True
+
+    def _call(self, destination, path, interface, member, signature='', body=()):
+        if member == 'ListNames':
+            return ([name for name in self.players] + [':1.7', 'org.freedesktop.DBus'],)
+        if member == 'Get':
+            prop = body[1]
+            if prop not in self.players[destination]:
+                raise RuntimeError('no such property')
+            return (('v', self.players[destination][prop]),)
+        if member == 'Set':
+            self.sets.append((destination, body[1], body[2]))
+            return ()
+        raise AssertionError(member)
+
+
+class MediaOptionTests(unittest.TestCase):
+    PLAYING = {'PlaybackStatus': 'Playing', 'Shuffle': False, 'LoopStatus': 'None', 'CanControl': True}
+
+    def run_op(self, players, operation):
+        bus = FakeBus(players)
+        media.control_media(operation, reader=bus)
+        return bus
+
+    def test_shuffle_is_switched_on_the_player_that_plays(self):
+        bus = self.run_op({'org.mpris.MediaPlayer2.old': dict(self.PLAYING, PlaybackStatus='Paused'),
+                           'org.mpris.MediaPlayer2.spotify': self.PLAYING}, 'shuffle')
+        self.assertEqual(bus.sets, [('org.mpris.MediaPlayer2.spotify', 'Shuffle', ('b', True))])
+        self.assertTrue(bus.closed)
+
+    def test_repeat_cycles_off_all_one_off(self):
+        for current, expected in (('None', 'Playlist'), ('Playlist', 'Track'), ('Track', 'None')):
+            bus = self.run_op({'org.mpris.MediaPlayer2.p': dict(self.PLAYING, LoopStatus=current)}, 'repeat')
+            self.assertEqual(bus.sets[0][2], ('s', expected), current)
+
+    def test_a_player_without_the_option_or_without_control_is_left_alone_and_says_so(self):
+        for player in ({'PlaybackStatus': 'Playing'}, dict(self.PLAYING, CanControl=False)):
+            bus = FakeBus({'org.mpris.MediaPlayer2.p': player})
+            with self.assertRaisesRegex(OSError, 'does not offer shuffle'):
+                media.control_media('shuffle', reader=bus)
+            self.assertEqual(bus.sets, [])
+        with self.assertRaisesRegex(OSError, 'does not offer repeat'):
+            media.control_media('repeat', reader=FakeBus({'org.mpris.MediaPlayer2.p': {'PlaybackStatus': 'Playing'}}))
+
+    def test_no_player_and_an_unknown_operation_are_refused(self):
+        with self.assertRaisesRegex(OSError, 'No player is open'):
+            media.control_media('shuffle', reader=FakeBus({}))
+        with self.assertRaises(ValueError):
+            media.control_media('rewind', reader=FakeBus({}))
+
+
 if __name__ == '__main__':
     unittest.main()

@@ -4,6 +4,7 @@ from __future__ import annotations
 import os
 import signal
 import subprocess
+import sys
 import tempfile
 import threading
 import time
@@ -86,7 +87,7 @@ def script_path(script: str) -> str:
 
 def run_script(script: str, timeout: float, stop: threading.Event) -> None:
     """Run a script file without a window, in its own folder, with the limits and errors of `run_command`."""
-    from program_locator import script_command
+    from desktop import script_command
     try:
         path = script_path(script)
         argv = script_command(path)
@@ -98,6 +99,10 @@ def run_script(script: str, timeout: float, stop: threading.Event) -> None:
 def edit_script(script: str) -> None:
     """Open a script in the user's editor: the file type's edit verb, else Notepad."""
     path = script_path(script)
+    if sys.platform.startswith('linux'):  # the desktop's editor for the file type
+        from desktop import open_path
+        open_path(path)
+        return
     try:
         os.startfile(path, 'edit')
     except OSError:

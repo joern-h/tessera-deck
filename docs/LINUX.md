@@ -52,6 +52,9 @@ ports it finds and keeps the one that answers like a panel.
   or removed. `win` means the Super key.
 - **Open** starts `.desktop` entries with `gio launch`, other targets with `xdg-open`. The program picker lists the
   entries of the application menu, with their icons (a vector icon needs `rsvg-convert`).
+- **Scripts** (the *script* action) run with `python3`, `bash`, `node` and `pwsh`: `.py`, `.pyw`, `.sh`, `.js`, `.ps1`. `.bat`, `.cmd` and `.ahk` are Windows-only and give an error. *Edit script* and the tray's *Open the host log* open the file with `xdg-open`.
+- **The media action** (shuffle on/off, cycle repeat) works on MPRIS players that offer it, such as Spotify and VLC; a player without it says so instead of pretending.
+- **The Claude Code, Codex and ZCode profiles** of the Linux default start their tool in your terminal (`x-terminal-emulator`, `gnome-terminal`, `konsole`, `xfce4-terminal` or `xterm`, whichever is installed).
 - **Volume** uses `pactl`; per-program volume (`app:firefox`) follows PulseAudio/PipeWire streams. The media session comes
   from MPRIS, so Spotify, browsers, VLC and mpv work.
 - **Secrets** (settings named like a password or token) go to the system keyring, and the profile keeps only

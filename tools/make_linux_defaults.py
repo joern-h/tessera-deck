@@ -7,6 +7,7 @@ changes:  python tools/make_linux_defaults.py
 import copy
 import json
 from pathlib import Path
+import re
 import sys
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -66,6 +67,30 @@ CHANGES = {
 }
 
 
+# The agent profiles start their tool in Windows Terminal: start "" wt.exe -w 0 nt -d "%CD%" cmd.exe /k claude -c
+WINDOWS_TERMINAL = re.compile(r'^start "" wt\.exe -w 0 nt -d "%CD%" cmd\.exe /k (?P<command>.+)$')
+ZCODE_EXE = re.compile(r'^start "" "%LOCALAPPDATA%\\Programs\\ZCode\\ZCode\.exe"$')
+
+
+def in_terminal(command):
+    """Open the first available terminal emulator in the home folder and run `command` in it, detached."""
+    runs = (('x-terminal-emulator', '-e'), ('gnome-terminal', '--'), ('konsole', '-e'), ('xfce4-terminal', '-x'),
+            ('xterm', '-e'))
+    chain = ' || '.join(f'(command -v {name} >/dev/null 2>&1 && exec setsid -f {name} {flag} {command})' for name, flag in runs)
+    return {'type': 'shell', 'command': f'cd "$HOME" && ({chain})', 'timeout': 10}
+
+
+def linux_action(action):
+    """An action with its Windows-only shell command swapped; anything else is returned as it is."""
+    if action.get('type') == 'shell':
+        match = WINDOWS_TERMINAL.match(action.get('command', ''))
+        if match:
+            return in_terminal(match['command'])
+        if ZCODE_EXE.match(action.get('command', '')):
+            return launch('zcode')
+    return action
+
+
 def convert(config):
     config = copy.deepcopy(config)
     for profile in config['profiles'].values():
@@ -82,6 +107,10 @@ def convert(config):
                     if button.get('icon') == 'app':
                         button['icon'] = 'lc:e0f5' if name == 'main' else button['icon']
                 kept.append(button)
+            for button in kept:
+                button['actions'] = [linux_action(action) for action in button.get('actions', [])]
+                for state in button.get('states', []):
+                    state['actions'] = [linux_action(action) for action in state.get('actions', [])]
             profile['pages'][name] = kept
     return config
 

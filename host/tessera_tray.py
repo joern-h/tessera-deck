@@ -5,6 +5,7 @@ and opens the editor on a click.
 """
 
 import json
+from desktop import open_path
 from venv_paths import venv_python
 import logging
 import os
@@ -243,7 +244,7 @@ class TrayApp:
     # --- help: what a user needs to report a problem ---------------------------
     def open_log(self, *_):
         if LOG_PATH.is_file():
-            os.startfile(LOG_PATH)  # noqa: S606 - the user's own log in their text editor
+            open_path(LOG_PATH)  # the user's own log in their text editor
         else:
             self.icon.notify('There is no host log yet. It is written once the host has run.', 'Tessera')
 
@@ -256,7 +257,7 @@ class TrayApp:
             return
         PROBLEMS_PATH.write_text('Recent problems in the Tessera host log (newest last)\n\n' + '\n'.join(problems) + '\n',
                                  encoding='utf-8')
-        os.startfile(PROBLEMS_PATH)  # noqa: S606 - our own text file in the user's text editor
+        open_path(PROBLEMS_PATH)  # our own text file in the user's text editor
 
     def save_diagnostics(self, *_):
         def work():
@@ -267,7 +268,7 @@ class TrayApp:
         self.background(work)
 
     def open_data_folder(self, *_):
-        os.startfile(ROOT / 'host')  # noqa: S606 - profiles, icons and backups live here
+        open_path(ROOT / 'host')  # profiles, icons and backups live here
 
     def check_for_updates(self, *_):
         def work():

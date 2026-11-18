@@ -136,7 +136,8 @@
                 ]
               }
             ],
-            "bind": "speaker_muted"
+            "bind": "speaker_muted",
+            "actions": []
           },
           {
             "id": 10,
@@ -167,7 +168,8 @@
                 ]
               }
             ],
-            "bind": "media_playing"
+            "bind": "media_playing",
+            "actions": []
           },
           {
             "id": 13,
@@ -620,7 +622,8 @@
                 ]
               }
             ],
-            "bind": "speaker_muted"
+            "bind": "speaker_muted",
+            "actions": []
           },
           {
             "id": 2,
@@ -687,7 +690,8 @@
                 ]
               }
             ],
-            "bind": "media_playing"
+            "bind": "media_playing",
+            "actions": []
           },
           {
             "id": 6,
@@ -744,7 +748,8 @@
                 ]
               }
             ],
-            "bind": "mic_muted"
+            "bind": "mic_muted",
+            "actions": []
           },
           {
             "id": 9,
@@ -1714,7 +1719,8 @@
             "actions": [
               {
                 "type": "shell",
-                "command": "start \"\" wt.exe -w 0 nt -d \"%CD%\" cmd.exe /k codex"
+                "command": "cd \"$HOME\" && ((command -v x-terminal-emulator >/dev/null 2>&1 && exec setsid -f x-terminal-emulator -e codex) || (command -v gnome-terminal >/dev/null 2>&1 && exec setsid -f gnome-terminal -- codex) || (command -v konsole >/dev/null 2>&1 && exec setsid -f konsole -e codex) || (command -v xfce4-terminal >/dev/null 2>&1 && exec setsid -f xfce4-terminal -x codex) || (command -v xterm >/dev/null 2>&1 && exec setsid -f xterm -e codex))",
+                "timeout": 10
               }
             ]
           },
@@ -1726,7 +1732,8 @@
             "actions": [
               {
                 "type": "shell",
-                "command": "start \"\" wt.exe -w 0 nt -d \"%CD%\" cmd.exe /k codex resume --last"
+                "command": "cd \"$HOME\" && ((command -v x-terminal-emulator >/dev/null 2>&1 && exec setsid -f x-terminal-emulator -e codex resume --last) || (command -v gnome-terminal >/dev/null 2>&1 && exec setsid -f gnome-terminal -- codex resume --last) || (command -v konsole >/dev/null 2>&1 && exec setsid -f konsole -e codex resume --last) || (command -v xfce4-terminal >/dev/null 2>&1 && exec setsid -f xfce4-terminal -x codex resume --last) || (command -v xterm >/dev/null 2>&1 && exec setsid -f xterm -e codex resume --last))",
+                "timeout": 10
               }
             ]
           },
@@ -1989,7 +1996,8 @@
             "actions": [
               {
                 "type": "shell",
-                "command": "start \"\" wt.exe -w 0 nt -d \"%CD%\" cmd.exe /k claude"
+                "command": "cd \"$HOME\" && ((command -v x-terminal-emulator >/dev/null 2>&1 && exec setsid -f x-terminal-emulator -e claude) || (command -v gnome-terminal >/dev/null 2>&1 && exec setsid -f gnome-terminal -- claude) || (command -v konsole >/dev/null 2>&1 && exec setsid -f konsole -e claude) || (command -v xfce4-terminal >/dev/null 2>&1 && exec setsid -f xfce4-terminal -x claude) || (command -v xterm >/dev/null 2>&1 && exec setsid -f xterm -e claude))",
+                "timeout": 10
               }
             ],
             "status": {
@@ -2009,7 +2017,8 @@
             "actions": [
               {
                 "type": "shell",
-                "command": "start \"\" wt.exe -w 0 nt -d \"%CD%\" cmd.exe /k claude -c"
+                "command": "cd \"$HOME\" && ((command -v x-terminal-emulator >/dev/null 2>&1 && exec setsid -f x-terminal-emulator -e claude -c) || (command -v gnome-terminal >/dev/null 2>&1 && exec setsid -f gnome-terminal -- claude -c) || (command -v konsole >/dev/null 2>&1 && exec setsid -f konsole -e claude -c) || (command -v xfce4-terminal >/dev/null 2>&1 && exec setsid -f xfce4-terminal -x claude -c) || (command -v xterm >/dev/null 2>&1 && exec setsid -f xterm -e claude -c))",
+                "timeout": 10
               }
             ]
           },
@@ -2021,7 +2030,8 @@
             "actions": [
               {
                 "type": "shell",
-                "command": "start \"\" wt.exe -w 0 nt -d \"%CD%\" cmd.exe /k claude -r"
+                "command": "cd \"$HOME\" && ((command -v x-terminal-emulator >/dev/null 2>&1 && exec setsid -f x-terminal-emulator -e claude -r) || (command -v gnome-terminal >/dev/null 2>&1 && exec setsid -f gnome-terminal -- claude -r) || (command -v konsole >/dev/null 2>&1 && exec setsid -f konsole -e claude -r) || (command -v xfce4-terminal >/dev/null 2>&1 && exec setsid -f xfce4-terminal -x claude -r) || (command -v xterm >/dev/null 2>&1 && exec setsid -f xterm -e claude -r))",
+                "timeout": 10
               }
             ]
           },
@@ -2484,7 +2494,8 @@
             "actions": [
               {
                 "type": "shell",
-                "command": "start \"\" \"%LOCALAPPDATA%\\Programs\\ZCode\\ZCode.exe\""
+                "command": "(command -v zcode >/dev/null 2>&1 && exec setsid -f zcode)",
+                "timeout": 10
               }
             ]
           },

@@ -1,6 +1,7 @@
 """Local graphical editor for the standalone Tessera."""
 import logging
 from default_profile import seed_path
+from desktop import open_path
 from venv_paths import venv_python
 import argparse
 import copy
@@ -637,8 +638,8 @@ class Editor:
             config = None  # a broken profile file is when the bundle is needed most
         target = diagnostics.build(ROOT / 'diagnostics', config, self.status(), self.version(),
                                    ROOT / 'host/deck.local.log')
-        if os.name == 'nt':
-            os.startfile(target.parent)
+        if os.name == 'nt' or sys.platform.startswith('linux'):
+            open_path(target.parent)
         return {'path': str(target), 'message': f'Saved {target.name} in the diagnostics folder. It contains no button contents.'}
 
     def claude_hooks(self, data):
