@@ -4,7 +4,7 @@ Standalone on purpose: it imports nothing from Tessera, so it works under any in
 virtual environment needs no GTK. The menu is a normal GTK menu, so it follows the user's GTK theme and does its own
 grabbing, keyboard navigation and closing (Esc, a click elsewhere).
 
-stdin: {"x": 100, "y": 200, "rows": [{"separator": true} |
+stdin: {"x": 100, "y": 200 (where the icon was clicked, in X11 pixels), "rows": [{"separator": true} |
         {"text", "enabled", "checked" (null|bool), "radio", "default", "submenu": null|rows}, ...]}
 stdout: the path of the chosen entry ("3", or "5.1" for the second entry of the sixth item's submenu); nothing when the
         menu was closed without a choice.
@@ -54,9 +54,27 @@ def build(rows, prefix, on_choose):
     return menu
 
 
+def to_logical(display, x, y):
+    """X11 reports the click in device pixels; GTK places windows in logical pixels (device / scale of the monitor).
+
+    With a scale of 2 on a 4K or 5K screen the two differ by a factor of two, and a menu opened at the device position
+    lands past the last monitor, which is then where GTK puts it. The live pointer is the fallback."""
+    for index in range(display.get_n_monitors()):
+        monitor = display.get_monitor(index)
+        area, scale = monitor.get_geometry(), monitor.get_scale_factor()
+        if area.x * scale <= x < (area.x + area.width) * scale and area.y * scale <= y < (area.y + area.height) * scale:
+            return x // scale, y // scale
+    try:
+        _screen, px, py = display.get_default_seat().get_pointer().get_position()
+        return px, py
+    except Exception:
+        return x, y
+
+
 def main():
     request = json.load(sys.stdin)
     x, y = int(request['x']), int(request['y'])
+    x, y = to_logical(Gdk.Display.get_default(), x, y)
     chosen = []
     shown = []  # set_active() on a check or radio item emits "activate": entries count only once the menu is up
 

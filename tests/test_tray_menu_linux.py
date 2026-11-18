@@ -207,6 +207,34 @@ class GtkHelperTests(unittest.TestCase):
         self.assertEqual(self.choose('Escape'), '')
         self.assertEqual(self.choose(click=True), '')
 
+    def test_a_click_in_device_pixels_becomes_the_logical_position_of_its_monitor(self):
+        """Three scaled monitors as in a real desk setup: the menu must open on the monitor that was clicked."""
+        code = """
+import importlib.util, sys
+spec = importlib.util.spec_from_file_location('helper', sys.argv[1]); helper = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(helper)
+class Rect:
+    def __init__(self, x, y, w, h): self.x, self.y, self.width, self.height = x, y, w, h
+class Monitor:
+    def __init__(self, x, y, w, h, scale): self.rect, self.scale = Rect(x, y, w, h), scale
+    def get_geometry(self): return self.rect
+    def get_scale_factor(self): return self.scale
+class Pointer:
+    def get_position(self): return (None, 7, 8)
+class Seat:
+    def get_pointer(self): return Pointer()
+class Display:
+    monitors = [Monitor(1920, 0, 2560, 1440, 2), Monitor(0, 0, 1920, 1200, 2), Monitor(4480, 0, 1920, 1080, 2)]
+    def get_n_monitors(self): return 3
+    def get_monitor(self, i): return self.monitors[i]
+    def get_default_seat(self): return Seat()
+d = Display()
+print(helper.to_logical(d, 10204, 1943), helper.to_logical(d, 5000, 2800), helper.to_logical(d, 100, 2300),
+      helper.to_logical(d, 99999, 99999))
+"""
+        done = subprocess.run([GTK_PYTHON, '-c', code, str(tray_menu.HELPER)], capture_output=True, text=True, env=self.env)
+        self.assertEqual(done.stdout.strip(), '(5102, 971) (2500, 1400) (50, 1150) (7, 8)', done.stderr)
+
     def test_building_the_radio_and_check_entries_chooses_nothing_by_itself(self):
         self.assertEqual(self.choose('Escape'), '')  # set_active() inside the helper must not count as a choice
 
