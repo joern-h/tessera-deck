@@ -116,16 +116,8 @@ def session_locked() -> bool:
             from platform_linux import session
             return session.locked()
         return False
-    import ctypes
-    user32 = ctypes.WinDLL('user32', use_last_error=True)
-    user32.OpenInputDesktop.argtypes = [ctypes.c_uint32, ctypes.c_bool, ctypes.c_uint32]
-    user32.OpenInputDesktop.restype = ctypes.c_void_p
-    user32.CloseDesktop.argtypes = [ctypes.c_void_p]
-    desktop = user32.OpenInputDesktop(0, False, 0x0100)  # DESKTOP_SWITCHDESKTOP
-    if not desktop:
-        return True
-    user32.CloseDesktop(desktop)
-    return False
+    from platform_windows import session
+    return session.locked()
 
 
 def _installed_ports():

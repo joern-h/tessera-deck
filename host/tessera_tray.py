@@ -302,11 +302,8 @@ class TrayApp:
             question = f'Start with Windows starts Tessera from another folder. Start this copy instead?\n\n{ROOT}'
         else:
             question = 'Start Tessera when you sign in to Windows?\n\nThe panel then works after every restart.'
-        import ctypes
-        answer = ctypes.windll.user32.MessageBoxW(
-            None, question + '\n\nYou can change this later in the tray menu: Start with Windows.', 'Tessera',
-            0x4 | 0x20 | 0x10000 | 0x40000)
-        if answer == 6:  # IDYES
+        from platform_windows.dialogs import ask_yes_no
+        if ask_yes_no(question + '\n\nYou can change this later in the tray menu: Start with Windows.', 'Tessera'):
             set_autostart(True)
 
     def quit(self, *_):

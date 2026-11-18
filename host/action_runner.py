@@ -27,9 +27,8 @@ def kill_tree(process: subprocess.Popen) -> None:
     if process.poll() is not None:
         return
     if IS_WINDOWS:
-        subprocess.run(['taskkill', '/F', '/T', '/PID', str(process.pid)], check=False,
-                       stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
-                       creationflags=subprocess.CREATE_NO_WINDOW)
+        from platform_windows.processes import kill_tree as windows_kill_tree
+        windows_kill_tree(process.pid)
     else:
         try:  # the command runs in its own session (see run_command), so its whole group goes, not just the shell
             os.killpg(process.pid, signal.SIGKILL)
@@ -103,7 +102,5 @@ def edit_script(script: str) -> None:
         from desktop import open_path
         open_path(path)
         return
-    try:
-        os.startfile(path, 'edit')
-    except OSError:
-        subprocess.Popen(['notepad.exe', path])
+    from platform_windows.processes import edit_script as windows_edit_script
+    windows_edit_script(path)

@@ -522,7 +522,8 @@ class Daemon(DisplayMixin, BackgroundMixin, PressMixin):
                 if not (action.get('reuse', False) and focus_existing_process(process)):
                     # %NAME% only in a path: in an address it would send this PC's environment to the site
                     expanded = target if URI_SCHEME.match(target) else os.path.expandvars(target)
-                    os.startfile(expanded if os.path.exists(expanded) else locate(expanded) or expanded)
+                    from platform_windows.processes import open_target
+                    open_target(expanded, locate)
             else:
                 from platform_linux import programs
                 if not (action.get('reuse', False) and focus_existing_process(action.get('process', ''))):
