@@ -24,6 +24,10 @@ def shortcut_target(path):
         return str(path)
 
 
+def scan_programs():
+    return scan_start_menu()
+
+
 def scan_start_menu():
     """Local Start-menu and taskbar shortcuts and Store apps, without launching anything."""
     roots = [

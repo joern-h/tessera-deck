@@ -16,8 +16,12 @@ SHARED_FUNCTIONS = {
     'audio': ['control_audio', 'read_audio', 'read_mixer'],
     'media': ['MediaReader', 'control_media'],
     'session': ['locked'],
+    'secrets': ['seal', 'unseal'],
     'filelock': ['lock', 'unlock'],
     'autostart': ['startup_script_path', 'is_enabled', 'enable'],
+    'shell': ['scan_programs', 'shortcut_target'],
+    'editor_window': ['activate_window', 'brand_taskbar_identity', 'open_native_window'],
+    'programs': ['describe'],
     'input': ['bring_to_front', 'focus_existing_process', 'foreground_context', 'is_neutral_window', 'matches_foreground',
               'process_window', 'send_hotkey', 'send_mouse', 'send_text', 'set_clipboard', 'window_action'],
 }

@@ -189,3 +189,20 @@ def script_command(script: str, which=shutil.which, registry=_app_paths, associa
                 if (root / folder / name).is_file():
                     return [str(root / folder / name), script]
     raise ValueError('AutoHotkey was not found on this PC')
+
+
+def describe(target: str) -> dict:
+    """{'name', 'process'} of a program picked from the list: a file or shortcut, or a Store app; ValueError otherwise."""
+    from platform_windows.shell import shortcut_target
+    path = Path(target)
+    store_app = target.startswith('shell:AppsFolder\\')
+    if not store_app and (not path.is_file() or path.suffix.lower() not in ('.exe', '.lnk', '.cmd', '.bat')):
+        raise ValueError('Choose a local program file or shortcut')
+    resolved = target if store_app else shortcut_target(path)
+    process = Path(resolved).name if Path(resolved).suffix.lower() == '.exe' else ''
+    if store_app:
+        lowered = target.casefold()
+        process = ('ChatGPT.exe' if 'openai.codex_' in lowered else
+                   'claude.exe' if 'claude_' in lowered else
+                   'XboxPcApp.exe' if 'microsoft.gamingapp_' in lowered else '')
+    return {'name': path.stem, 'process': process}

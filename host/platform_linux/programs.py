@@ -89,6 +89,14 @@ def process_name(exec_line: str) -> str:
     return ''
 
 
+def describe(target: str) -> dict:
+    """{'name', 'process'} of a program picked from the list; ValueError when it is not a .desktop entry."""
+    info = parse(Path(target)) if target.endswith('.desktop') else None
+    if info is None:
+        raise ValueError('Choose a program of the application menu')
+    return {'name': info['name'], 'process': process_name(info['exec'])}
+
+
 def icon_file(name: str, environ=None) -> Path | None:
     """The image file for an Icon= value: a path, or the best file of the icon themes (PNG first, then SVG)."""
     if not name:

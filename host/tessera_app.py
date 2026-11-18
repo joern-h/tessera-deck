@@ -2,6 +2,7 @@
 from default_profile import seed_path
 from platform_windows.process_flags import NEW_CONSOLE, NO_WINDOW
 from desktop import open_path
+from platform_support import load
 from venv_paths import venv_python
 import argparse
 import copy
@@ -57,10 +58,7 @@ def editor_build_id():
 
 def activate_window(pid):
     """Restore the existing native editor instead of opening a duplicate (Windows; elsewhere the editor is a browser tab)."""
-    if os.name != 'nt':
-        return False
-    from platform_windows.editor_window import activate_window as windows_activate_window
-    return windows_activate_window(pid)
+    return load('editor_window').activate_window(pid)
 
 
 @lru_cache(maxsize=1)
@@ -101,10 +99,7 @@ def action_pack_catalog():
 
 def brand_taskbar_identity():
     """Give this process its own Windows identity, so the taskbar shows the editor's own icon."""
-    if os.name != 'nt':
-        return
-    from platform_windows.editor_window import brand_taskbar_identity as windows_brand_taskbar_identity
-    windows_brand_taskbar_identity()
+    load('editor_window').brand_taskbar_identity()
 
 
 WINDOW_FILE = ROOT / 'host/window.local.json'
@@ -139,10 +134,8 @@ def save_window_geometry(geometry, saved_file=WINDOW_FILE):
 def open_window(url):
     """Open the editor in a native window (Windows: WebView2); anything else, or a failure, opens a browser tab. Returns
     False for the browser."""
-    if os.name == 'nt':
-        from platform_windows.editor_window import open_native_window
-        if open_native_window(url, window_geometry, save_window_geometry, MIN_WINDOW, ROOT):
-            return True
+    if load('editor_window').open_native_window(url, window_geometry, save_window_geometry, MIN_WINDOW, ROOT):
+        return True
     webbrowser.open(url)
     return False
 
@@ -167,20 +160,11 @@ def installed_programs():
 
 def scan_programs():
     """Return the programs of the system's menu (Windows: Start menu and Store apps; Linux: .desktop entries)."""
-    if sys.platform.startswith('linux'):
-        from platform_linux import programs
-        return programs.scan()
-    if os.name != 'nt':
-        return []
-    from platform_windows.shell import scan_start_menu
-    return scan_start_menu()
+    return load('shell').scan_programs()
 
 
 def shortcut_target(path):
-    if os.name != 'nt' or Path(path).suffix.lower() != '.lnk':
-        return str(path)
-    from platform_windows.shell import shortcut_target as windows_shortcut_target
-    return windows_shortcut_target(path)
+    return load('shell').shortcut_target(path)
 
 
 class Editor:
@@ -321,44 +305,18 @@ class Editor:
     def program_details(self, target, allowed_only=True):
         if not isinstance(target, str) or not target.strip() or len(target) > 2048:
             raise ValueError('Choose a valid program')
-        path = Path(target)
         programs = installed_programs()
         allowed = {item['target'] for item in programs}
         if allowed_only and target not in allowed:
             raise ValueError('The program is not in the local program list')
-        if sys.platform.startswith('linux'):
-            return self.linux_program_details(target, programs)
-        store_app = target.startswith('shell:AppsFolder\\')
-        if not store_app and (not path.is_file() or path.suffix.lower() not in ('.exe', '.lnk', '.cmd', '.bat')):
-            raise ValueError('Choose a local program file or shortcut')
-        resolved = target if store_app else shortcut_target(path)
-        process = Path(resolved).name if Path(resolved).suffix.lower() == '.exe' else ''
-        if store_app:
-            lowered = target.casefold()
-            process = ('ChatGPT.exe' if 'openai.codex_' in lowered else
-                       'claude.exe' if 'claude_' in lowered else
-                       'XboxPcApp.exe' if 'microsoft.gamingapp_' in lowered else '')
+        info = load('programs').describe(target)
         matched = next((item for item in programs if item['target'] == target), None)
         try:
             icon = self.assets.import_program_icon(target)['id']
         except (ValueError, OSError):
             icon = 'folder'
-        return {'name': matched['name'] if matched else path.stem, 'target': target, 'process': process,
-                'icon': icon, 'reuse': bool(process)}
-
-    def linux_program_details(self, target, programs):
-        from platform_linux import programs as menu
-        info = menu.parse(Path(target)) if target.endswith('.desktop') else None
-        if info is None:
-            raise ValueError('Choose a program of the application menu')
-        process = menu.process_name(info['exec'])
-        try:
-            icon = self.assets.import_program_icon(target)['id']
-        except (ValueError, OSError):
-            icon = 'folder'
-        matched = next((item for item in programs if item['target'] == target), None)
-        return {'name': matched['name'] if matched else info['name'], 'target': target, 'process': process,
-                'icon': icon, 'reuse': bool(process)}
+        return {'name': matched['name'] if matched else info['name'], 'target': target, 'process': info['process'],
+                'icon': icon, 'reuse': bool(info['process'])}
 
     def icon_preferences(self, data=None):
         path = self.path.with_name('icon-library.local.json')
@@ -523,8 +481,7 @@ class Editor:
             config = None  # a broken profile file is when the bundle is needed most
         target = diagnostics.build(ROOT / 'diagnostics', config, self.status(), self.version(),
                                    ROOT / 'host/deck.local.log')
-        if os.name == 'nt' or sys.platform.startswith('linux'):
-            open_path(target.parent)
+        open_path(target.parent)
         return {'path': str(target), 'message': f'Saved {target.name} in the diagnostics folder. It contains no button contents.'}
 
     def claude_hooks(self, data):

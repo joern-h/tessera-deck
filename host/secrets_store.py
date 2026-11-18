@@ -6,12 +6,8 @@ hold "$(dpapi:<base64>)" instead of the token. On Linux the value goes to the sy
 """
 from __future__ import annotations
 
-import base64
-import binascii
-import os
-
 from import_review import SECRET_SETTING
-from platform_support import IS_LINUX
+from platform_support import load
 
 PREFIX, SUFFIX = '$(dpapi:', ')'
 KEYRING_PREFIX = '$(keyring:'
@@ -26,34 +22,18 @@ def is_sealed(value) -> bool:
 
 
 def protect(text: str) -> str:
-    if IS_LINUX and text and not is_sealed(text):
-        from platform_linux import secrets as keyring_secrets
-        return KEYRING_PREFIX + keyring_secrets.store(text) + SUFFIX
-    if os.name != 'nt' or not text or is_sealed(text):
+    """`text` in its sealed form for this system (Windows DPAPI, Linux keyring); an empty or sealed value stays as it is."""
+    if not text or is_sealed(text):
         return text
-    from platform_windows.secrets import dpapi
-    return PREFIX + base64.b64encode(dpapi(True, text.encode('utf-8'))).decode('ascii') + SUFFIX
+    return load('secrets').seal(text)
 
 
 def unprotect(value):
-    """The plain value; '' when it cannot be opened (another user or PC), so the plugin asks for it again."""
+    """The plain value; '' when it cannot be opened (another user or PC, or sealed on the other system), so the plugin
+    asks for it again."""
     if not is_sealed(value):
         return value
-    if value.startswith(KEYRING_PREFIX):
-        if not IS_LINUX:
-            return ''
-        from platform_linux import secrets as keyring_secrets
-        try:
-            return keyring_secrets.fetch(value[len(KEYRING_PREFIX):-len(SUFFIX)]) or ''
-        except OSError:
-            return ''
-    if os.name != 'nt':
-        return ''
-    from platform_windows.secrets import dpapi
-    try:
-        return dpapi(False, base64.b64decode(value[len(PREFIX):-len(SUFFIX)], validate=True)).decode('utf-8')
-    except (OSError, ValueError, binascii.Error):
-        return ''
+    return load('secrets').unseal(value)
 
 
 def seal_plugins(config: dict, previous: dict | None = None) -> dict:

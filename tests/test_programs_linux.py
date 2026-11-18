@@ -94,6 +94,24 @@ class LaunchTests(unittest.TestCase):
         self.assertTrue(all(call.kwargs['start_new_session'] for call in popen.call_args_list))
 
 
+class DescribeTests(unittest.TestCase):
+    def test_a_menu_entry_is_described_by_its_name_and_process(self):
+        with tempfile.TemporaryDirectory() as directory:
+            entry = write(directory, 'fox.desktop', Name='Fox', Exec='/usr/bin/fox %u')
+            self.assertEqual(programs.describe(str(entry)), {'name': 'Fox', 'process': 'fox'})
+
+    def test_anything_else_is_refused(self):
+        for target in ('/usr/bin/fox', '/no/such.desktop'):
+            with self.subTest(target=target), self.assertRaisesRegex(ValueError, 'application menu'):
+                programs.describe(target)
+
+    def test_the_editor_has_no_native_window_and_a_shortcut_is_its_own_target(self):
+        from platform_linux import editor_window, shell
+        self.assertFalse(editor_window.activate_window(1))
+        self.assertFalse(editor_window.open_native_window('http://x', None, None, None, None))
+        self.assertEqual(shell.shortcut_target(Path('/a/b.lnk')), '/a/b.lnk')
+
+
 class AutostartTests(unittest.TestCase):
     """deck_control.set_autostart on Linux: the XDG autostart entry, for the folder Tessera runs from."""
 

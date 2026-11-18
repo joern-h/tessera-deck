@@ -46,3 +46,20 @@ def forget(identifier: str) -> None:
         _keyring().delete_password(SERVICE, identifier)
     except Exception:  # already gone, or not reachable: nothing to clean up
         pass
+
+
+def seal(text: str) -> str:
+    """The profile's `$(keyring:<id>)` form of `text`; OSError when there is no usable keyring."""
+    from secrets_store import KEYRING_PREFIX, SUFFIX
+    return KEYRING_PREFIX + store(text) + SUFFIX
+
+
+def unseal(value: str) -> str:
+    """The plain text of a `$(keyring:<id>)` value; '' for anything else or one the keyring cannot give."""
+    from secrets_store import KEYRING_PREFIX, SUFFIX
+    if not value.startswith(KEYRING_PREFIX):
+        return ''
+    try:
+        return fetch(value[len(KEYRING_PREFIX):-len(SUFFIX)]) or ''
+    except OSError:
+        return ''

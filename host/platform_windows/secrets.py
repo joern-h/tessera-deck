@@ -25,3 +25,23 @@ def dpapi(protect: bool, data: bytes) -> bytes:
         return ctypes.string_at(target.pbData, target.cbData)
     finally:
         kernel32.LocalFree(ctypes.cast(target.pbData, ctypes.c_void_p))
+
+
+def seal(text: str) -> str:
+    """The profile's `$(dpapi:...)` form of `text`."""
+    import base64
+    from secrets_store import PREFIX, SUFFIX
+    return PREFIX + base64.b64encode(dpapi(True, text.encode('utf-8'))).decode('ascii') + SUFFIX
+
+
+def unseal(value: str) -> str:
+    """The plain text of a `$(dpapi:...)` value; '' for anything else or one that does not open (another user or PC)."""
+    import base64
+    import binascii
+    from secrets_store import PREFIX, SUFFIX
+    if not value.startswith(PREFIX):
+        return ''
+    try:
+        return dpapi(False, base64.b64decode(value[len(PREFIX):-len(SUFFIX)], validate=True)).decode('utf-8')
+    except (OSError, ValueError, binascii.Error):
+        return ''
