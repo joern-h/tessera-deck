@@ -49,7 +49,7 @@ host/            Windows host
   import_review.py     Import approval
   action_preview.py    Dry run (Test)
   setup_tool.py        Setup, uninstall, diagnostics, dependency sync
-  system_stats.py, sensor_sources.py, gpu_sources.py   Gauge values
+  system_stats.py, gpu_sources.py                      Gauge values (Windows sensor readers: platform_windows/)
   live_state.py, pc_state.py, ambient.py               Counters, timers, PC state, idle screen
   deck_assets.py       Icons and images
   editor/              Editor front end (index.html, core.js, app.js, dialogs.js, CSS)

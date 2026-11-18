@@ -60,7 +60,7 @@ class HostRuntimeTests(HostCase):
             self.assertRegex(widgets['1']['label'], r'^\d\d:\d\d$')
 
     def test_libre_hardware_monitor_tree_maps_to_the_right_cpu_and_gpu_metrics(self):
-        from sensor_sources import flatten_sensor_tree
+        from platform_windows.sensors import flatten_sensor_tree
         def sensor(text, sensor_id, value):
             return {'Text': text, 'SensorId': sensor_id, 'Value': value, 'Children': []}
         tree = {'Text': 'Sensor', 'Children': [{'Text': 'PC', 'Children': [

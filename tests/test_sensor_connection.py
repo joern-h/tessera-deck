@@ -13,7 +13,7 @@ import tesserad as deck
 import host_support  # noqa: E402
 import input_common
 from platform_windows import input as win_input
-from sensor_sources import LibreHardwareMonitorReader
+from platform_windows.sensors import LibreHardwareMonitorReader
 
 TREE = {'Text': 'root', 'Children': [{'Text': 'pc', 'Children': [{'Text': 'CPU', 'Children': [
     {'Text': 'Core', 'SensorId': '/amdcpu/0/temperature/0', 'Value': '45.0 °C'}]}]}]}
