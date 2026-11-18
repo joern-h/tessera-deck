@@ -17,6 +17,7 @@ SHARED_FUNCTIONS = {
     'media': ['MediaReader', 'control_media'],
     'session': ['locked'],
     'filelock': ['lock', 'unlock'],
+    'autostart': ['startup_script_path', 'is_enabled', 'enable'],
     'input': ['bring_to_front', 'focus_existing_process', 'foreground_context', 'is_neutral_window', 'matches_foreground',
               'process_window', 'send_hotkey', 'send_mouse', 'send_text', 'set_clipboard', 'window_action'],
 }
@@ -33,6 +34,9 @@ class SelectorTests(unittest.TestCase):
         for name in ('darwin', 'freebsd14', 'cygwin', 'aix'):
             with self.assertRaisesRegex(platform_support.UnsupportedPlatform, name):
                 platform_support.detect(name)
+
+    def test_load_gives_the_module_of_this_system(self):
+        self.assertEqual(platform_support.load('autostart').__name__, f'platform_{platform_support.NAME}.autostart')
 
     def test_this_system_has_exactly_one_flag(self):
         self.assertNotEqual(platform_support.IS_WINDOWS, platform_support.IS_LINUX)

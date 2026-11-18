@@ -94,6 +94,34 @@ class LaunchTests(unittest.TestCase):
         self.assertTrue(all(call.kwargs['start_new_session'] for call in popen.call_args_list))
 
 
+class AutostartTests(unittest.TestCase):
+    """deck_control.set_autostart on Linux: the XDG autostart entry, for the folder Tessera runs from."""
+
+    def test_the_entry_is_written_found_and_removed(self):
+        import deck_control
+        with tempfile.TemporaryDirectory() as directory:
+            root, config = Path(directory, 'tessera'), Path(directory, 'config')
+            python = root / 'host/.venv/bin/python'
+            python.parent.mkdir(parents=True)
+            python.write_text('')
+            with patch.object(deck_control, 'ROOT', root):
+                self.assertFalse(deck_control.autostart_enabled(str(config)))
+                path = deck_control.set_autostart(True, str(config))
+                self.assertEqual(path, config / 'autostart/tessera.desktop')
+                self.assertIn(str(root / 'host/tessera_tray.py'), path.read_text(encoding='utf-8'))
+                self.assertTrue(deck_control.autostart_enabled(str(config)))
+                deck_control.set_autostart(False, str(config))
+                self.assertFalse(deck_control.autostart_enabled(str(config)))
+
+    def test_without_the_virtual_environment_it_says_what_to_run(self):
+        import deck_control
+        with tempfile.TemporaryDirectory() as directory:
+            with patch.object(deck_control, 'ROOT', Path(directory, 'tessera')), \
+                    self.assertRaisesRegex(OSError, 'Tessera.sh'):
+                deck_control.set_autostart(True, str(Path(directory, 'config')))
+            self.assertFalse(Path(directory, 'config/autostart/tessera.desktop').exists())
+
+
 class EntryTests(unittest.TestCase):
     def test_a_desktop_entry_quotes_its_command(self):
         text = desktop_entries.entry(['/home/a b/python', 'x"y.py'], Path('/work dir'))

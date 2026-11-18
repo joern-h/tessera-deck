@@ -24,3 +24,10 @@ def detect(platform: str | None = None) -> str:
 NAME = detect()
 IS_WINDOWS = NAME == 'windows'
 IS_LINUX = NAME == 'linux'
+
+
+def load(module: str):
+    """The module of this system's package: load('autostart') is platform_windows.autostart on Windows and
+    platform_linux.autostart on Linux. Both offer the same functions (tests/test_platform_support.py checks it)."""
+    import importlib
+    return importlib.import_module(f"platform_{NAME}.{module}")
