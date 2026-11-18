@@ -2,7 +2,6 @@
 """Standalone Tessera terminal and profile editor."""
 import argparse
 from venv_paths import venv_python
-import os
 import asyncio
 import copy
 import json
@@ -18,6 +17,7 @@ from textual.binding import Binding
 from textual.containers import Horizontal, Vertical, VerticalScroll, Grid
 from textual.screen import ModalScreen
 from textual.widgets import Button, DataTable, Footer, Header, Input, Select, Static, TabbedContent, TabPane
+from platform_windows.process_flags import NO_WINDOW
 
 
 ACTION_FIELDS = {'hotkey': ('keys', 'ctrl+shift+b'), 'text': ('text', 'Text to type'),
@@ -600,7 +600,7 @@ class TesseraApp(App):
         import subprocess
         subprocess.Popen([str(venv_python(ROOT, True)),
                           str(ROOT / 'host/tessera_app.py'), '--editor'],
-                         creationflags=subprocess.CREATE_NO_WINDOW if os.name == 'nt' else 0)
+                         creationflags=NO_WINDOW)
 
     def __init__(self, controller=None, profile_path=None, reader=None):
         self.controller = controller or Controller()

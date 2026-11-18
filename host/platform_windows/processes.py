@@ -23,6 +23,11 @@ def open_target(expanded: str, locate) -> None:
     os.startfile(expanded if os.path.exists(expanded) else locate(expanded) or expanded)
 
 
+def open_path(path) -> None:
+    """Open a file or folder with the program Windows has for it."""
+    os.startfile(path)  # noqa: S606 - the user's own file or folder
+
+
 def notification_beep() -> None:
     """The system "asterisk" sound, for a timer that ran out."""
     import winsound

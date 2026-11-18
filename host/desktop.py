@@ -22,8 +22,8 @@ def open_path(path) -> None:
         from platform_linux.programs import launch
         launch(str(path))
     else:
-        import os
-        os.startfile(path)  # noqa: S606 - the user's own file or folder
+        from platform_windows.processes import open_path as windows_open_path
+        windows_open_path(path)
 
 
 def script_command(script: str):

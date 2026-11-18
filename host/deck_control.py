@@ -3,6 +3,7 @@ import json
 import os
 from pathlib import Path
 import subprocess
+from platform_windows.process_flags import NO_WINDOW
 import sys
 import time
 import psutil
@@ -230,7 +231,7 @@ class Controller:
             process = subprocess.Popen([sys.executable, str(ROOT / 'host/tesserad.py'), '--port', port],
                 cwd=ROOT, stdout=log, stderr=subprocess.STDOUT,
                 env=dict(os.environ, PYTHONUTF8='1', PYTHONUNBUFFERED='1'),
-                creationflags=subprocess.CREATE_NO_WINDOW if os.name == 'nt' else 0)
+                creationflags=NO_WINDOW)
         finally:
             log.close()
         current = psutil.Process(process.pid)

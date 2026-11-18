@@ -9,6 +9,7 @@ from __future__ import annotations
 import os
 import shutil
 import subprocess
+from platform_windows.process_flags import NO_WINDOW
 import time
 
 NVIDIA_QUERY = 'temperature.gpu,power.draw,fan.speed,clocks.gr,utilization.gpu'
@@ -52,7 +53,7 @@ class NvidiaSmiReader:
         try:
             done = self._run([self._path, f'--query-gpu={NVIDIA_QUERY}', '--format=csv,noheader,nounits'],
                              capture_output=True, text=True, timeout=3, check=False,
-                             creationflags=getattr(subprocess, 'CREATE_NO_WINDOW', 0))
+                             creationflags=NO_WINDOW)
             self._last = parse_nvidia(done.stdout) if done.returncode == 0 else {}
         except (OSError, subprocess.SubprocessError):
             self._last = {}

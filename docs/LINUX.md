@@ -80,10 +80,17 @@ scripts in `tools/`.
 
 ## For developers
 
-`host/desktop.py` and `host/system_audio.py` give the rest of the host the Windows or the Linux functions; the Windows code is in `host/platform_windows/` and
-is unchanged. The Linux code is in `host/platform_linux/` (`x11.py`, `audio.py`, `media.py`, `secrets.py`, `programs.py`,
-`sensors.py`, `session.py`, `desktop_entries.py`). The tests in `tests/test_*_linux.py` run the X11 backend against a
-private Xvfb server and never touch your desktop or your keyring.
+The host has three layers. Shared code (validation, the engine, the editor) names no operating system API. What differs
+lives in one package per system: `host/platform_windows/` (input and windows, Core Audio and WinRT media, DPAPI secrets,
+the sensor readers, program lookup and icons, the editor window, shortcuts, autostart, process flags ...) and
+`host/platform_linux/` (`x11.py`, `audio.py`, `media.py`, `secrets.py`, `programs.py`, `sensors.py`, `session.py`,
+`desktop_entries.py`, `tray_menu.py` ...). `host/input_common.py` holds the vocabulary both share (key names, operation
+lists, program matching). `host/desktop.py` and `host/system_audio.py` hand the rest of the host the Windows or the Linux
+functions.
+
+`tests/test_platform_windows.py` checks that every Windows module imports on any system, and that shared modules call no
+Windows API. The tests in `tests/test_*_linux.py` run the X11 backend against a private Xvfb server and never touch your
+desktop or your keyring.
 
 The Linux-only entries of `host/requirements.lock` were added by hand with `sys_platform == "linux"`; the Windows-only
 ones carry `sys_platform == "win32"`. After `pip-compile` on Windows, add them again (see CONTRIBUTING.md).

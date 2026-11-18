@@ -1,5 +1,6 @@
 """Local graphical editor for the standalone Tessera."""
 from default_profile import seed_path
+from platform_windows.process_flags import NEW_CONSOLE, NO_WINDOW
 from desktop import open_path
 from venv_paths import venv_python
 import argparse
@@ -45,7 +46,8 @@ def editor_build_id():
     digest = hashlib.sha256()
     files = [Path(__file__), ROOT / 'host/deck_control.py', ROOT / 'host/deck_assets.py',
              ROOT / 'host/tesserad.py', ROOT / 'host/config_check.py', ROOT / 'host/panel_serial.py',
-             ROOT / 'host/input_common.py', ROOT / 'host/platform_windows/input.py', ROOT / 'host/action_packs.json',
+             ROOT / 'host/input_common.py', ROOT / 'host/desktop.py', ROOT / 'host/action_packs.json',
+             *sorted((ROOT / 'host/platform_windows').glob('*.py')), *sorted((ROOT / 'host/platform_linux').glob('*.py')),
              WEB / 'index.html', WEB / 'style.css', WEB / 'streamdeck.css', WEB / 'cockpit.css', WEB / 'core.js', WEB / 'app.js', WEB / 'dialogs.js']
     for path in files:
         digest.update(path.name.encode('utf-8'))
@@ -662,7 +664,7 @@ class Editor:
             return {'message': 'The host has started.' if command == 'start' else 'The host has stopped.'}
         if command == 'terminal':
             subprocess.Popen([sys.executable, str(ROOT / 'host/tessera_terminal.py')], cwd=ROOT,
-                             creationflags=subprocess.CREATE_NEW_CONSOLE if os.name == 'nt' else 0)
+                             creationflags=NEW_CONSOLE)
             return {'message': 'The deck terminal has been opened.'}
         if command == 'autostart':
             enabled = data.get('enabled')
@@ -678,7 +680,7 @@ class Editor:
             result = subprocess.run([sys.executable, str(ROOT / 'host/editor_file_picker.py'), kind],
                                     capture_output=True, text=True, encoding='utf-8', timeout=180,
                                     env=dict(os.environ, PYTHONUTF8='1'),
-                                    creationflags=subprocess.CREATE_NO_WINDOW if os.name == 'nt' else 0)
+                                    creationflags=NO_WINDOW)
             if result.returncode:
                 raise ValueError('The file picker could not be opened. You can paste the path into the field.')
             path = result.stdout.strip()

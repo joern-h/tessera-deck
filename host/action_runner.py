@@ -8,6 +8,7 @@ import sys
 import tempfile
 import threading
 import time
+from platform_windows.process_flags import NEW_PROCESS_GROUP, NO_WINDOW
 
 IS_WINDOWS = os.name == 'nt'
 POLL_SECONDS = 0.1
@@ -42,7 +43,7 @@ def kill_tree(process: subprocess.Popen) -> None:
 
 def run_command(command, timeout: float, stop: threading.Event, shell: bool = True, cwd: str | None = None) -> None:
     """Run `command` until it exits, `timeout` passes or `stop` is set; raises CommandFailed otherwise."""
-    flags = subprocess.CREATE_NO_WINDOW | subprocess.CREATE_NEW_PROCESS_GROUP if IS_WINDOWS else 0
+    flags = NO_WINDOW | NEW_PROCESS_GROUP
     # stderr goes to a file, not a pipe: a program launched with `start` inherits a pipe and would hold it open
     with tempfile.TemporaryFile() as errors:
         process = subprocess.Popen(command, shell=shell, stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,

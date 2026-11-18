@@ -13,6 +13,7 @@ import json
 import os
 import re
 import subprocess
+from platform_windows.process_flags import NO_WINDOW
 import sys
 import threading
 import time
@@ -265,7 +266,7 @@ class PluginManager:
         try:
             process = self._spawn(resolve_command(manifest, self._python), cwd=manifest.path, env=environment,
                                   stdin=subprocess.DEVNULL, stdout=log, stderr=subprocess.STDOUT,
-                                  creationflags=getattr(subprocess, 'CREATE_NO_WINDOW', 0))
+                                  creationflags=NO_WINDOW)
         except (OSError, ManifestError) as exc:
             self._revoke(token)
             self._record_failure(manifest.id, f'could not start: {exc}')

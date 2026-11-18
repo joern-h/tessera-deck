@@ -20,6 +20,7 @@ from PIL import Image, ImageDraw
 
 from deck_control import (ROOT, Controller, autostart_enabled, firmware_installing, save_profiles, set_autostart, stop_editor,
                           startup_script_path)
+from platform_windows.process_flags import DETACHED, NO_WINDOW
 from host_runtime import InstanceLock
 
 log = logging.getLogger(__name__)
@@ -190,7 +191,7 @@ class TrayApp:
         self.editor_asked = now
         pythonw = venv_python(ROOT, True)
         executable = str(pythonw if pythonw.is_file() else sys.executable)
-        flags = (subprocess.CREATE_NO_WINDOW | subprocess.DETACHED_PROCESS) if os.name == 'nt' else 0
+        flags = NO_WINDOW | DETACHED
         subprocess.Popen([executable, str(ROOT / 'host/tessera_app.py'), '--editor'], cwd=ROOT, creationflags=flags)
 
     def host(self, *steps):

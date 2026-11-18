@@ -15,6 +15,7 @@ import re
 import secrets
 import socket
 import subprocess
+from platform_windows.process_flags import NO_WINDOW
 import threading
 import time
 from action_runner import Busy
@@ -79,7 +80,7 @@ def make_private(path) -> None:
             os.chmod(path, 0o600)
             return
         # *S-1-3-4 is "owner rights": no user name to look up, and it follows the file's owner.
-        flags = getattr(subprocess, 'CREATE_NO_WINDOW', 0)
+        flags = NO_WINDOW
         subprocess.run(['icacls', str(path), '/inheritance:r', '/grant:r', '*S-1-3-4:F'], check=True, timeout=10,
                        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, creationflags=flags)
         try:
