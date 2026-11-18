@@ -4,7 +4,7 @@ The input and window code depends on the display server, so it sits behind `Desk
 session type (`x11.py` today; `wayland.py` is the place for a Wayland one). Audio, media, secrets and the
 autostart entry do not depend on the session and have one module each.
 
-`win_input` uses `backend()` on Linux; the Windows code paths are not touched.
+`desktop.py` uses `backend()` on Linux; the Windows code is in `platform_windows`.
 """
 from __future__ import annotations
 

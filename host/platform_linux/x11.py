@@ -13,7 +13,7 @@ from platform_linux.base import DesktopBackend, MOUSE_OPERATIONS
 TIMEOUT = 5.0
 TYPE_CHUNK = 64  # characters per xdotool call when typing without a pause: the stop request is checked between
 
-# The host's key names (win_input.VK) to the X keysym names xdotool takes.
+# The host's key names (input_common.KEY_NAMES) to the X keysym names xdotool takes.
 KEYSYMS = {'ctrl': 'Control_L', 'control': 'Control_L', 'shift': 'Shift_L', 'alt': 'Alt_L',
            'win': 'Super_L', 'meta': 'Super_L', 'enter': 'Return', 'return': 'Return', 'tab': 'Tab',
            'esc': 'Escape', 'escape': 'Escape', 'space': 'space', 'backspace': 'BackSpace', 'delete': 'Delete',

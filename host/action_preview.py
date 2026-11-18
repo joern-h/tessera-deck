@@ -8,7 +8,7 @@ import shutil
 
 from action_runner import script_path
 from program_locator import locate, script_command as windows_script_command
-from win_input import parse_hotkey
+from input_common import split_hotkey
 from substitution import ENV_REFERENCE, check_web_url, expand_environment, substitute
 
 
@@ -44,7 +44,7 @@ def _step(action: dict, variables: dict[str, str], environment, locator) -> tupl
     kind = action.get('type')
     if kind == 'hotkey':
         try:
-            parse_hotkey(action['keys'])
+            split_hotkey(action['keys'])
         except (ValueError, KeyError) as exc:
             return False, f'Unknown key combination: {exc}'
         return True, f'Press {action["keys"]}'

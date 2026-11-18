@@ -39,7 +39,8 @@ from system_stats import SystemStats, gauge_state
 
 # The engine's building blocks live in their own modules; the names stay importable from here for the apps,
 # the tools and the tests.
-from win_input import CHILD_NAMES_SECONDS, IS_WINDOWS, VK, child_names, dry_hotkey, parse_hotkey, real_app_exe  # noqa: F401
+from input_common import CHILD_NAMES_SECONDS, IS_WINDOWS, child_names, dry_hotkey  # noqa: F401
+from platform_windows.input import VK, parse_hotkey, real_app_exe  # noqa: F401
 from default_profile import seed_path
 from desktop import (bring_to_front, focus_existing_process, foreground_context, is_neutral_window,  # noqa: F401
                      matches_foreground, send_hotkey, send_mouse, send_text, set_clipboard, window_action)

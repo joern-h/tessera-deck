@@ -1,5 +1,5 @@
 """Host tests, part two: runtime status, sensors, toggle keys, the control API, focus, reloads and triggers."""
-import win_input
+from platform_windows import input as win_input
 import copy
 import json
 from pathlib import Path

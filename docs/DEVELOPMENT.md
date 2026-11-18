@@ -29,7 +29,8 @@ host/            Windows host
   config_check.py      Validation of profiles.json
   config_store.py      Configuration versions and backups
   panel_serial.py      USB link: handshake, layout and image transfer
-  win_input.py         Keys, mouse, foreground window and focus on Windows
+  input_common.py      The key names and operation lists every system shares
+  platform_windows/    Windows-specific code (input and windows, ...); platform_linux/ is its Linux counterpart
   tessera_app.py       Local editor server and WebView2 window
   tessera_terminal.py  Terminal UI
   tessera_tray.py      Tray app

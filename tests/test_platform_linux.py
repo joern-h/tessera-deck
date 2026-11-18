@@ -14,7 +14,8 @@ sys.path.insert(0, str(ROOT / 'host'))
 import platform_linux
 from platform_linux import BackendUnavailable
 from platform_linux import base, input as linux_input, wayland, x11
-import win_input
+import input_common
+from platform_windows import input as win_input
 
 
 class FakeRun:
@@ -58,8 +59,11 @@ class SessionTests(unittest.TestCase):
 
 
 class KeyTests(unittest.TestCase):
+    def test_the_key_names_are_exactly_the_windows_virtual_key_table(self):
+        self.assertEqual(set(input_common.KEY_NAMES), set(win_input.VK))
+
     def test_every_host_key_name_has_an_x11_keysym(self):
-        missing = sorted(name for name in win_input.VK if name not in x11.KEYSYMS)
+        missing = sorted(name for name in input_common.KEY_NAMES if name not in x11.KEYSYMS)
         self.assertEqual(missing, [])
 
     def test_a_hotkey_presses_in_order_and_releases_in_reverse_in_one_call(self):
@@ -104,7 +108,7 @@ class KeyTests(unittest.TestCase):
             backend.send_mouse('triple')
 
     def test_every_mouse_operation_of_the_host_is_handled(self):
-        for op in win_input.MOUSE_OPERATIONS:
+        for op in input_common.MOUSE_OPERATIONS:
             self.assertIn(op, base.MOUSE_OPERATIONS)
             x11.X11Backend(FakeRun()).send_mouse(op, 1, 1, 1)
 
@@ -137,7 +141,7 @@ class WindowTests(unittest.TestCase):
         self.assertIn(['xdotool', 'windowstate', '--add', 'ABOVE', '9'], off.calls)
 
     def test_every_window_operation_of_the_host_is_handled(self):
-        for op in win_input.WINDOW_OPERATIONS:
+        for op in input_common.WINDOW_OPERATIONS:
             fake = FakeRun({'xrandr': 'Monitors: 1\n 0: +*A 100/1x100/1+0+0 A', 'getwindowgeometry': 'X=0 Y=0 WIDTH=1 HEIGHT=1',
                             'getactivewindow': '5'})
             self.assertTrue(x11.X11Backend(fake).window_op('9', op), op)
@@ -160,7 +164,7 @@ class MatchingTests(unittest.TestCase):
         self.assertTrue(linux_input.is_neutral_window({'exe': 'python3.14', 'title': 'tessera editor'}))
         self.assertFalse(linux_input.is_neutral_window({'exe': 'firefox', 'title': 'tessera'}))
 
-    def test_the_host_gets_the_linux_functions_from_desktop_on_linux_and_win_input_stays_as_it_is(self):
+    def test_the_host_gets_the_linux_functions_from_desktop_on_linux_and_the_windows_ones_stay_separate(self):
         if not sys.platform.startswith('linux'):
             self.skipTest('Linux only')
         import desktop

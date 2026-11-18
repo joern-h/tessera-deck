@@ -80,7 +80,7 @@ scripts in `tools/`.
 
 ## For developers
 
-`host/desktop.py` and `host/system_audio.py` give the rest of the host the Windows or the Linux functions; `win_input.py`
+`host/desktop.py` and `host/system_audio.py` give the rest of the host the Windows or the Linux functions; the Windows code is in `host/platform_windows/` and
 is unchanged. The Linux code is in `host/platform_linux/` (`x11.py`, `audio.py`, `media.py`, `secrets.py`, `programs.py`,
 `sensors.py`, `session.py`, `desktop_entries.py`). The tests in `tests/test_*_linux.py` run the X11 backend against a
 private Xvfb server and never touch your desktop or your keyring.

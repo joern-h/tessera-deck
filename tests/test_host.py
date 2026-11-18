@@ -10,7 +10,7 @@ from unittest.mock import Mock, patch
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / 'host'))
 import tesserad as deck
-import win_input
+from platform_windows import input as win_input
 from system_stats import select_hwinfo_metrics
 from deck_assets import Assets
 from host_support import HostCase, test_daemon

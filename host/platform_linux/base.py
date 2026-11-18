@@ -1,7 +1,7 @@
 """What the host needs from a desktop session: synthetic input, the clipboard and windows.
 
 A backend turns these calls into the tools of one display server. The key names are the host's own vocabulary
-(`win_input.VK`: ctrl, shift, alt, win, enter, f5, ...); a backend maps them to what its tools understand.
+(`input_common.KEY_NAMES`: ctrl, shift, alt, win, enter, f5, ...); a backend maps them to what its tools understand.
 """
 from __future__ import annotations
 

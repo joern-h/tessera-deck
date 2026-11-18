@@ -1,6 +1,8 @@
-"""The input and window functions of win_input for Linux, on top of the session's desktop backend.
+"""The input and window functions for Linux, on top of the session's desktop backend.
 
-`win_input` rebinds its public names to these on Linux, so the rest of the host does not know which system it runs on.
+`desktop.py` gives the rest of the host these functions on Linux and the ones of platform_windows/input.py on Windows, so
+the host does not know which system it runs on.
+
 Process names are the lowercase executable names (`firefox`); a trailing `.exe` in a profile or an action is ignored,
 so a profile written on Windows still matches the same program here.
 """
@@ -25,9 +27,8 @@ def plain_name(name: str) -> str:
 
 
 def parse_names(combo: str) -> list[str]:
-    import win_input
-    win_input.parse_hotkey(combo)  # one vocabulary: an unknown key is refused the same way on every system
-    return [part.strip().lower() for part in combo.split('+')]
+    from input_common import split_hotkey
+    return split_hotkey(combo)  # one vocabulary: an unknown key is refused the same way on every system
 
 
 def send_hotkey(combo):
@@ -60,11 +61,11 @@ def process_name(pid: int) -> str:
 
 
 def window_context(window: dict) -> dict:
-    import win_input
+    from input_common import child_names
     exe = process_name(window['pid']) if window.get('pid') else ''
     processes = [exe] if exe else []
     if window.get('pid'):
-        processes += [name for name in win_input.child_names(window['pid']) if name not in processes]
+        processes += [name for name in child_names(window['pid']) if name not in processes]
     return {'exe': exe, 'title': window.get('title', '').lower(), 'processes': [plain_name(n) for n in processes]}
 
 
@@ -74,13 +75,13 @@ def foreground_context():
 
 
 def is_neutral_window(context):
-    import win_input
+    from platform_windows.input import is_neutral_window as windows_neutral_window
     exe, title = context.get('exe', ''), context.get('title', '')
     if exe in NEUTRAL_EXES:
         return True
     if exe.startswith('python') and title.startswith('tessera'):
         return True
-    return win_input.is_neutral_window(context)  # the Windows shell names never occur here, so this only adds a check
+    return windows_neutral_window(context)  # the Windows shell names never occur here, so this only adds a check
 
 
 def matches_foreground(pattern, context):
@@ -120,8 +121,8 @@ def bring_to_front(_unused, window):
 
 def window_action(op, process=''):
     """Do `op` to the first window of `process`, or to the window in front. Returns False when there is none."""
-    import win_input
-    if op not in win_input.WINDOW_OPERATIONS:
+    from input_common import WINDOW_OPERATIONS
+    if op not in WINDOW_OPERATIONS:
         raise ValueError(f'Unknown window operation: {op}')
     if process:
         window = process_window(process)

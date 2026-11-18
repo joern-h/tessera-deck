@@ -10,7 +10,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / 'host'))
 import tesserad as deck
 import host_support  # noqa: E402
-import win_input
+from platform_windows import input as win_input
 from action_runner import Busy, CommandFailed, run_command
 from host_runtime import SuspendableRLock
 

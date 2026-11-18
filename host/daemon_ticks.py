@@ -11,7 +11,7 @@ import psutil
 import agent_activity
 import cockpit
 from desktop import focus_existing_process
-from win_input import IS_WINDOWS
+from input_common import IS_WINDOWS
 
 from config_store import write_atomic
 

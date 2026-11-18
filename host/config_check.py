@@ -14,7 +14,7 @@ from pc_state import FLAG_SOURCES, check_audio, check_media
 from plugins import PLUGIN_ID, check_plugin_config
 from program_locator import BATCH_SUFFIXES, SCRIPT_SUFFIXES, SCRIPT_VARIABLE, script_text
 from substitution import check_web_url
-from win_input import MOUSE_OPERATIONS, WINDOW_OPERATIONS, parse_hotkey
+from input_common import MOUSE_OPERATIONS, WINDOW_OPERATIONS, split_hotkey
 
 ACTION_FIELDS = {'hotkey': 'keys', 'text': 'text', 'open': 'target', 'shell': 'command', 'script': 'path',
                  'http': 'url', 'delay': None, 'page': 'page', 'profile': 'profile',
@@ -39,7 +39,7 @@ def _check_press(action, pages, profiles):
 
 
 def _check_hotkey(action, pages, profiles):
-    parse_hotkey(action['keys'])
+    split_hotkey(action['keys'])
 
 
 def _check_open(action, pages, profiles):

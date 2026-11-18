@@ -11,7 +11,8 @@ sys.path.insert(0, str(ROOT / 'host'))
 import psutil
 import tesserad as deck
 import host_support  # noqa: E402
-import win_input
+import input_common
+from platform_windows import input as win_input
 from sensor_sources import LibreHardwareMonitorReader
 
 TREE = {'Text': 'root', 'Children': [{'Text': 'pc', 'Children': [{'Text': 'CPU', 'Children': [
@@ -78,7 +79,7 @@ class SensorConnectionTests(unittest.TestCase):
 
 class ChildNameTests(unittest.TestCase):
     def setUp(self):
-        patcher = patch.object(win_input, '_child_names', (None, 0.0, []))
+        patcher = patch.object(input_common, '_child_names', (None, 0.0, []))
         patcher.start()
         self.addCleanup(patcher.stop)
         child = Mock()
