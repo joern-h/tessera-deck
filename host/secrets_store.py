@@ -1,7 +1,7 @@
 """Plugin secrets at rest: settings named like a password are stored encrypted for the current user.
 
-Windows DPAPI ties the value to this user's login, so profiles.json and its backups hold "$(dpapi:<base64>)"
-instead of the token. On Linux the value goes to the system keyring and the profile holds "$(keyring:<id>)"
+Windows DPAPI (platform_windows/secrets.py) ties the value to this user's login, so profiles.json and its backups
+hold "$(dpapi:<base64>)" instead of the token. On Linux the value goes to the system keyring and the profile holds "$(keyring:<id>)"
 (platform_linux/secrets.py). The plain value exists only in the plugin's environment.
 """
 from __future__ import annotations
@@ -16,30 +16,6 @@ from import_review import SECRET_SETTING
 PREFIX, SUFFIX = '$(dpapi:', ')'
 KEYRING_PREFIX = '$(keyring:'
 LINUX = sys.platform.startswith('linux')
-CRYPTPROTECT_UI_FORBIDDEN = 0x1
-
-
-def _dpapi(protect: bool, data: bytes) -> bytes:
-    import ctypes
-    from ctypes import wintypes
-
-    class Blob(ctypes.Structure):
-        _fields_ = [('cbData', wintypes.DWORD), ('pbData', ctypes.POINTER(ctypes.c_char))]
-
-    crypt32, kernel32 = ctypes.WinDLL('crypt32', use_last_error=True), ctypes.WinDLL('kernel32')
-    function = crypt32.CryptProtectData if protect else crypt32.CryptUnprotectData
-    function.argtypes = [ctypes.POINTER(Blob), ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p,
-                         wintypes.DWORD, ctypes.POINTER(Blob)]
-    function.restype = wintypes.BOOL
-    kernel32.LocalFree.argtypes = [ctypes.c_void_p]
-    buffer = ctypes.create_string_buffer(data, len(data))
-    source, target = Blob(len(data), ctypes.cast(buffer, ctypes.POINTER(ctypes.c_char))), Blob()
-    if not function(ctypes.byref(source), None, None, None, None, CRYPTPROTECT_UI_FORBIDDEN, ctypes.byref(target)):
-        raise ctypes.WinError(ctypes.get_last_error())
-    try:
-        return ctypes.string_at(target.pbData, target.cbData)
-    finally:
-        kernel32.LocalFree(ctypes.cast(target.pbData, ctypes.c_void_p))
 
 
 def is_secret(name) -> bool:
@@ -56,7 +32,8 @@ def protect(text: str) -> str:
         return KEYRING_PREFIX + keyring_secrets.store(text) + SUFFIX
     if os.name != 'nt' or not text or is_sealed(text):
         return text
-    return PREFIX + base64.b64encode(_dpapi(True, text.encode('utf-8'))).decode('ascii') + SUFFIX
+    from platform_windows.secrets import dpapi
+    return PREFIX + base64.b64encode(dpapi(True, text.encode('utf-8'))).decode('ascii') + SUFFIX
 
 
 def unprotect(value):
@@ -73,8 +50,9 @@ def unprotect(value):
             return ''
     if os.name != 'nt':
         return ''
+    from platform_windows.secrets import dpapi
     try:
-        return _dpapi(False, base64.b64decode(value[len(PREFIX):-len(SUFFIX)], validate=True)).decode('utf-8')
+        return dpapi(False, base64.b64decode(value[len(PREFIX):-len(SUFFIX)], validate=True)).decode('utf-8')
     except (OSError, ValueError, binascii.Error):
         return ''
 
