@@ -83,34 +83,20 @@ def desktop_shortcut_path() -> Path:
     if sys.platform.startswith('linux'):  # the application menu entry; it is also what a launcher bar or a search finds
         from platform_linux import desktop_entries
         return desktop_entries.launcher_path()
-    folder = ''
-    if os.name == 'nt':  # ask Windows: the Desktop may have been moved, for example into OneDrive
-        import ctypes
-        buffer = ctypes.create_unicode_buffer(260)
-        if ctypes.windll.shell32.SHGetFolderPathW(None, 0x10, None, 0, buffer) == 0:
-            folder = buffer.value
-    return Path(folder or os.path.expandvars(r'%USERPROFILE%\Desktop')) / 'Tessera.lnk'
+    from platform_windows.shortcuts import desktop_shortcut_path as windows_desktop_shortcut_path
+    return windows_desktop_shortcut_path()
 
 
 def create_shortcut(target: Path = ROOT / 'Tessera.cmd', link: Path | None = None) -> Path:
-    """A Desktop shortcut with the Tessera icon that starts the program minimised."""
+    """A shortcut with the Tessera icon: a Desktop .lnk on Windows, an application menu entry on Linux."""
     link = link or desktop_shortcut_path()
     if sys.platform.startswith('linux'):
         from platform_linux import desktop_entries
         target = target if target.name != 'Tessera.cmd' else target.with_name('Tessera.sh')
         return desktop_entries.write(link, desktop_entries.entry([str(target)], target.parent,
                                                                  target.parent / 'docs/images/logo-mark.svg'))
-    # `powershell -Command` does not expose trailing arguments as $args, so the values travel as environment variables.
-    script = ('$s=(New-Object -ComObject WScript.Shell).CreateShortcut($env:TESSERA_LINK);$s.TargetPath=$env:TESSERA_TARGET;'
-              '$s.WorkingDirectory=$env:TESSERA_FOLDER;$s.IconLocation=$env:TESSERA_ICON;$s.WindowStyle=7;$s.Save()')
-    environment = dict(os.environ, TESSERA_LINK=str(link), TESSERA_TARGET=str(target), TESSERA_FOLDER=str(target.parent),
-                       TESSERA_ICON=str(target.parent / 'host/tessera.ico'))
-    link.parent.mkdir(parents=True, exist_ok=True)
-    result = subprocess.run(['powershell.exe', '-NoProfile', '-NonInteractive', '-Command', script], env=environment,
-                            capture_output=True, text=True, creationflags=getattr(subprocess, 'CREATE_NO_WINDOW', 0))
-    if result.returncode:
-        raise OSError(result.stderr.strip() or 'The shortcut could not be created')
-    return link
+    from platform_windows.shortcuts import create_shortcut as windows_create_shortcut
+    return windows_create_shortcut(target, link)
 
 
 def uninstall(purge: bool = False, confirm: Callable[[str], str] = input, emit: Callable[[str], None] = print,

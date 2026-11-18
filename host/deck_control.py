@@ -28,33 +28,28 @@ def firmware_installing(path=None):
 
 
 def startup_script_path(appdata=None):
-    """Return the per-user Windows Startup shortcut script."""
-    if sys.platform.startswith('linux') and appdata is None:  # the XDG autostart entry
+    """Return the per-user startup entry: the XDG autostart file on Linux, the Startup folder's Tessera.vbs on Windows."""
+    if sys.platform.startswith('linux') and appdata is None:
         from platform_linux import desktop_entries
         return desktop_entries.autostart_path()
-    base = Path(appdata or os.environ.get('APPDATA', ''))
-    if not str(base):
-        raise OSError('The Windows startup folder is not available')
-    return base / 'Microsoft/Windows/Start Menu/Programs/Startup/Tessera.vbs'
+    from platform_windows import autostart
+    return autostart.startup_script_path(appdata)
 
 
 def startup_line():
     """The line of Tessera.vbs that starts the tray app of this folder."""
-    command = f'"{ROOT / "host/.venv/Scripts/pythonw.exe"}" "{ROOT / "host/tessera_tray.py"}"'.replace('"', '""')
-    return f'TesseraShell.Run "{command}", 0, False'
+    from platform_windows import autostart
+    return autostart.startup_line(ROOT)
 
 
 def autostart_enabled(appdata=None):
-    """True when Tessera.vbs starts this folder. A script left by a copy in another folder does not count."""
+    """True when the startup entry starts this folder. A script left by a copy in another folder does not count."""
     if sys.platform.startswith('linux') and appdata is None:  # the XDG autostart entry
         return startup_script_path(appdata).is_file()
     if os.name != 'nt':
         return False
-    try:
-        data = startup_script_path(appdata).read_bytes()
-        return startup_line() in data.decode('utf-16' if data[:2] in (b'\xff\xfe', b'\xfe\xff') else 'utf-8')  # 0.5-0.6.1 wrote UTF-8
-    except (OSError, UnicodeError):
-        return False
+    from platform_windows import autostart
+    return autostart.is_enabled(startup_script_path(appdata), ROOT)
 
 
 def set_autostart(enabled, appdata=None):
@@ -73,14 +68,8 @@ def set_autostart(enabled, appdata=None):
         return desktop_entries.write(path, desktop_entries.entry([str(python), str(ROOT / 'host/tessera_tray.py')], ROOT,
                                                                  ROOT / 'docs/images/logo-mark.svg',
                                                                  hidden_start=True))
-    if not (ROOT / 'host/.venv/Scripts/pythonw.exe').is_file():
-        raise OSError('Run Tessera.cmd once before enabling automatic startup')
-    contents = f'Set TesseraShell = CreateObject("WScript.Shell")\r\n{startup_line()}\r\n'
-    path.parent.mkdir(parents=True, exist_ok=True)
-    temporary = path.with_suffix('.tmp')
-    temporary.write_text(contents, encoding='utf-16')  # Script Host reads a non-ASCII path only as UTF-16
-    os.replace(temporary, path)
-    return path
+    from platform_windows import autostart
+    return autostart.enable(path, ROOT)
 
 
 def stop_editor(record_path=None, script=None, wait=4.0):
