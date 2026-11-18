@@ -31,9 +31,8 @@ EXPECTED = {
     'platform_windows.processes': ['kill_tree', 'edit_script', 'open_target', 'open_path', 'notification_beep'],
     'platform_windows.process_flags': ['NO_WINDOW', 'NEW_PROCESS_GROUP', 'DETACHED', 'NEW_CONSOLE'],
     'platform_windows.regional': ['clock_format'],
+    'platform_windows.filelock': ['lock', 'unlock'],
 }
-# modules that need a Windows-only library at import time: imported only where they are used
-NEEDS_WINDOWS = {'platform_windows.filelock'}
 WINDOWS_API = re.compile(r'ctypes\.(?:windll|WinDLL|wintypes)|\bwindll\b|\bwinreg\b|\bwinsound\b|\bmsvcrt\b|os\.startfile|'
                          r'\bMessageBoxW\b|\btaskkill\b|SHGetFolderPath|\bpycaw\b|\bwinrt\b|\bwin32pdh\b')
 # shared modules that name a Windows library only as text: the package list of the diagnostics and the import probe of the setup
@@ -49,7 +48,7 @@ class ImportTests(unittest.TestCase):
 
     def test_every_file_of_the_package_is_covered_by_this_test(self):
         files = {f'platform_windows.{path.stem}' for path in (ROOT / 'host/platform_windows').glob('*.py') if path.stem != '__init__'}
-        self.assertEqual(files - set(EXPECTED) - NEEDS_WINDOWS, set(), 'add the new module to EXPECTED')
+        self.assertEqual(files - set(EXPECTED), set(), 'add the new module to EXPECTED')
 
     def test_the_names_are_the_ones_the_old_modules_exported_where_tests_and_callers_rely_on_them(self):
         import input_common

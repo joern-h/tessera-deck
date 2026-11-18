@@ -8,7 +8,8 @@ import time
 
 import psutil
 
-IS_WINDOWS = os.name == 'nt'
+from platform_support import IS_WINDOWS  # noqa: F401  (the host's modules import it from here)
+
 KEY_NAMES = ('ctrl', 'control', 'shift', 'alt', 'win', 'meta', 'enter', 'return',
              'tab', 'esc', 'escape', 'space', 'backspace', 'delete', 'home', 'end',
              'pageup', 'pagedown', 'left', 'up', 'right', 'down', 'comma', 'period',

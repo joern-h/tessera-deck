@@ -8,9 +8,9 @@ import sys
 import tempfile
 import threading
 import time
+from platform_support import IS_WINDOWS
 from platform_windows.process_flags import NEW_PROCESS_GROUP, NO_WINDOW
 
-IS_WINDOWS = os.name == 'nt'
 POLL_SECONDS = 0.1
 STDERR_TAIL = 200
 

@@ -9,9 +9,6 @@ autostart entry do not depend on the session and have one module each.
 from __future__ import annotations
 
 import os
-import sys
-
-IS_LINUX = sys.platform.startswith('linux')
 
 
 class BackendUnavailable(OSError):

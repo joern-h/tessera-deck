@@ -9,13 +9,12 @@ from __future__ import annotations
 import base64
 import binascii
 import os
-import sys
 
 from import_review import SECRET_SETTING
+from platform_support import IS_LINUX
 
 PREFIX, SUFFIX = '$(dpapi:', ')'
 KEYRING_PREFIX = '$(keyring:'
-LINUX = sys.platform.startswith('linux')
 
 
 def is_secret(name) -> bool:
@@ -27,7 +26,7 @@ def is_sealed(value) -> bool:
 
 
 def protect(text: str) -> str:
-    if LINUX and text and not is_sealed(text):
+    if IS_LINUX and text and not is_sealed(text):
         from platform_linux import secrets as keyring_secrets
         return KEYRING_PREFIX + keyring_secrets.store(text) + SUFFIX
     if os.name != 'nt' or not text or is_sealed(text):
@@ -41,7 +40,7 @@ def unprotect(value):
     if not is_sealed(value):
         return value
     if value.startswith(KEYRING_PREFIX):
-        if not LINUX:
+        if not IS_LINUX:
             return ''
         from platform_linux import secrets as keyring_secrets
         try:

@@ -75,13 +75,10 @@ def foreground_context():
 
 
 def is_neutral_window(context):
-    from platform_windows.input import is_neutral_window as windows_neutral_window
     exe, title = context.get('exe', ''), context.get('title', '')
     if exe in NEUTRAL_EXES:
         return True
-    if exe.startswith('python') and title.startswith('tessera'):
-        return True
-    return windows_neutral_window(context)  # the Windows shell names never occur here, so this only adds a check
+    return exe.startswith('python') and title.startswith('tessera')
 
 
 def matches_foreground(pattern, context):
