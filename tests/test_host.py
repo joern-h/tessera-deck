@@ -299,7 +299,7 @@ class HostTests(HostCase):
         self.assertEqual(daemon.resolve_icon({'icon': 'app'}), 'im:0123456789ab')
 
     def test_program_targets_resolve_aliases_and_variables(self):
-        from deck_assets import resolve_program_target
+        from platform_windows.icons import resolve_program_target
         self.assertIn('WindowsTerminal', resolve_program_target('wt.exe'))
         self.assertEqual(resolve_program_target('shell:AppsFolder' + chr(92) + 'X!App'),
                          'shell:AppsFolder' + chr(92) + 'X!App')
@@ -327,7 +327,7 @@ class HostTests(HostCase):
 
     @unittest.skipUnless(sys.platform == 'win32', 'shell icons need Windows')
     def test_program_icon_is_extracted_from_the_shell_at_full_quality(self):
-        from deck_assets import shell_item_image
+        from platform_windows.icons import shell_item_image
         image = shell_item_image('C:' + chr(92) + 'Windows' + chr(92) + 'explorer.exe')
         self.assertGreaterEqual(image.width, 128)
         self.assertGreater(image.getchannel('A').getextrema()[1], 0)
