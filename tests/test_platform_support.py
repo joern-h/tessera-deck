@@ -175,6 +175,7 @@ class ImportableEverywhereTests(unittest.TestCase):
     def test_the_linux_modules_import_without_the_posix_libraries(self):
         self.check('platform_linux', POSIX_ONLY)
 
+    @unittest.skipIf(platform_support.IS_WINDOWS, 'subprocess and others need these libraries on Windows; here they are missing for real')
     def test_the_windows_modules_import_without_the_windows_libraries(self):
         self.check('platform_windows', WINDOWS_ONLY)
 

@@ -9,6 +9,7 @@ import unittest
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / 'host'))
 sys.path.insert(0, str(ROOT / 'tools'))
+from platform_marks import linux_only  # noqa: E402
 import config_store
 import make_linux_defaults
 import tesserad
@@ -39,6 +40,7 @@ class LinuxDefaultTests(unittest.TestCase):
             for leftover in ('wt.exe', 'cmd.exe', '%CD%', '%LOCALAPPDATA%', 'ms-settings', 'sndvol', 'mmsys.cpl', 'explorer.exe'):
                 self.assertNotIn(leftover, text)
 
+    @linux_only  # bash on a Windows PC is often the WSL stub, which cannot run these commands
     @unittest.skipUnless(shutil.which('bash'), 'needs bash')
     def test_every_shell_command_is_valid_shell(self):
         commands = [action['command'] for action in actions() if action.get('type') == 'shell']
