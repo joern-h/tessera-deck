@@ -1,9 +1,10 @@
 """The script types a script step can run, and how a script path is written. Shared by every system; what runs each type
 is platform_windows/programs.py (py launcher, cmd, AutoHotkey ...) or platform_linux/scripts.py (python3, bash, node ...)."""
 import re
-import sys
 
-SCRIPT_SUFFIXES = ('.py', '.pyw', '.ps1', '.bat', '.cmd', '.ahk', '.js') + (('.sh',) if sys.platform.startswith('linux') else ())
+from platform_support import load
+
+SCRIPT_SUFFIXES = ('.py', '.pyw', '.ps1', '.bat', '.cmd', '.ahk', '.js') + load('labels').SCRIPT_EXTRA_SUFFIXES
 BATCH_SUFFIXES = ('.bat', '.cmd')
 SCRIPT_VARIABLE = re.compile(r'%([^%\s]+)%')  # %NAME% only: $NAME is a legal folder name, so expandvars is not used
 

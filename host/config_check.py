@@ -2,6 +2,8 @@
 import json
 import math
 import os
+
+from platform_support import load
 import re
 
 from ambient import check_ambient
@@ -92,7 +94,7 @@ def _check_window(action, pages, profiles):
     if action['op'] not in WINDOW_OPERATIONS:
         raise ValueError(f'window: op must be one of {", ".join(WINDOW_OPERATIONS)}')
     if not isinstance(process, str) or len(process) > 260:
-        raise ValueError('window: process must be a program name like ' + ('notepad.exe' if os.name == 'nt' else 'firefox'))
+        raise ValueError('window: process must be a program name like ' + load('labels').PROGRAM_EXAMPLE)
     if action['op'] == 'focus' and not process.strip():
         raise ValueError('window: focus needs a process name')
 
@@ -471,7 +473,7 @@ def _check_panel(panel, pages=(), profiles=None):
     apps = panel.get('apps', [])
     if (not isinstance(apps, list) or len(apps) > cockpit.MAX_APPS
             or any(not isinstance(item, str) or not re.fullmatch(rf'[A-Za-z0-9_.-]{{1,35}}{SUFFIX}', item) for item in apps)):
-        raise ValueError(f'panel.apps must list at most {cockpit.MAX_APPS} program names' + (' ending in .exe' if os.name == 'nt' else ''))
+        raise ValueError(f'panel.apps must list at most {cockpit.MAX_APPS} program names' + load('labels').PROGRAM_LIST_NOTE)
     if type(panel.get('mic', True)) is not bool:
         raise ValueError('panel.mic must be true or false')
     stats = panel.get('stats', [])

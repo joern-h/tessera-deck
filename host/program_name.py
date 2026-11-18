@@ -4,9 +4,9 @@ Windows names carry `.exe` (spotify.exe). On Linux a program is its executable n
 and ignored, so a profile written on Windows keeps working. `plain()` is the shared form for comparing; `SUFFIX` goes
 into the patterns that check a name.
 """
-import os
+from platform_support import load
 
-SUFFIX = r'\.exe' if os.name == 'nt' else r'(?:\.exe)?'
+SUFFIX = load('labels').PROGRAM_SUFFIX
 
 
 def plain(name: str) -> str:

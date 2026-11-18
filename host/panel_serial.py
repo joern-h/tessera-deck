@@ -2,7 +2,8 @@
 from collections import OrderedDict
 import hashlib
 import json
-import sys
+
+from platform_support import load
 import threading
 import time
 import zlib
@@ -19,7 +20,7 @@ HANDSHAKE_SECONDS = 2.5
 # On Linux the kernel raises DTR and RTS when the port opens, before pyserial can lower them. The UART boards wire
 # those lines to EN and IO0, so opening the port restarts the panel and it needs about 3 s to answer. Wait longer
 # and ask again every second: a request sent while it boots is lost.
-RESETS_ON_OPEN = sys.platform.startswith('linux')
+RESETS_ON_OPEN = load('labels').RESETS_ON_OPEN
 RESET_HANDSHAKE_SECONDS = 10.0
 ASK_AGAIN_SECONDS = 1.0
 # It answers get_info before its boot screen has finished; a layout sent in that moment can lose bytes on the UART.

@@ -1,7 +1,8 @@
 """Live sensor values for Tessera: the CPU, the graphics card, memory, disk and network."""
 from __future__ import annotations
 
-import os
+from lhm_reader import LibreHardwareMonitorReader
+from platform_support import load
 import time
 from pathlib import Path
 
@@ -107,16 +108,12 @@ def _uptime(seconds: float) -> str:
 
 class SystemStats:
     def __init__(self, hwinfo=None, lhm=None, counters=None, gpu=None):
-        from platform_windows.hwinfo import HWiNFOReader
-        from platform_windows.sensors import LibreHardwareMonitorReader, WindowsCounters
-        self.hwinfo = hwinfo or HWiNFOReader()
+        sensors = load('sensors')
+        self.hwinfo = hwinfo or sensors.hwinfo_reader()
         self.lhm = lhm or LibreHardwareMonitorReader()
         frequency = psutil.cpu_freq()
-        self.native_sensors = counters is None and os.name != 'nt'  # Linux: hwmon, the amdgpu files and nvidia-smi
-        if self.native_sensors:
-            from platform_linux.sensors import LinuxSensors
-            counters = LinuxSensors()
-        self.counters = counters or WindowsCounters(frequency.max if frequency else None)
+        self.native_sensors = counters is None and sensors.NATIVE_SENSORS  # Linux: hwmon, the amdgpu files and nvidia-smi
+        self.counters = counters or sensors.native_counters(frequency.max if frequency else None)
         # Tests that inject their own counters get no real graphics-driver readings unless they ask for them.
         self.gpu = gpu if gpu is not None else (GpuReaders() if counters is None else GpuReaders([]))
         self.raw: dict[str, float] = {}
@@ -134,7 +131,7 @@ class SystemStats:
         now = time.monotonic()
         cpu = psutil.cpu_percent(None)
         ram = psutil.virtual_memory().percent
-        drive = os.environ.get('SystemDrive', 'C:') + '\\' if os.name == 'nt' else '/'
+        drive = load('sensors').disk_root()
         try:
             disk = psutil.disk_usage(drive).percent
         except OSError:

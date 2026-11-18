@@ -1,11 +1,10 @@
-"""Which default profile a first run starts from: the Linux one on Linux, the Windows one everywhere else."""
+"""Which default profile a first run starts from: the Linux one on Linux (when the folder has it), the Windows one else."""
 from pathlib import Path
-import sys
+
+from platform_support import load
 
 
 def seed_path(folder) -> Path:
     folder = Path(folder)
-    linux = folder / 'profiles.default.linux.json'
-    if sys.platform.startswith('linux') and linux.is_file():
-        return linux
-    return folder / 'profiles.default.json'
+    own = folder / load('labels').DEFAULT_PROFILE
+    return own if own.is_file() else folder / 'profiles.default.json'

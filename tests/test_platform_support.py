@@ -27,13 +27,19 @@ SHARED_FUNCTIONS = {
     'programs': ['describe', 'script_command', 'locate'],
     'processes': ['kill_tree', 'spawn_options', 'open_path', 'open_target', 'edit_script', 'notification_beep'],
     'files': ['make_private'],
+    'sensors': ['native_counters', 'hwinfo_reader', 'disk_root', 'extra_gpu_readers'],
+    'icons': ['program_icon_image'],
+    'regional': ['clock_format'],
     'input': ['bring_to_front', 'focus_existing_process', 'foreground_context', 'is_neutral_window', 'matches_foreground',
               'process_window', 'send_hotkey', 'send_mouse', 'send_text', 'set_clipboard', 'window_action'],
 }
 # module -> the constants the shared code reads on both systems
 SHARED_CONSTANTS = {'processes': ['STOP_BY_KILLING_TREE'],
+                    'sensors': ['NATIVE_SENSORS'],
                     'process_flags': ['NO_WINDOW', 'NEW_PROCESS_GROUP', 'DETACHED', 'NEW_CONSOLE'],
-                    'labels': ['MODULE_PROBE', 'AUTOSTART_NAME', 'SHORTCUT_NAME', 'LAUNCHER', 'ASKS_ABOUT_AUTOSTART']}
+                    'labels': ['MODULE_PROBE', 'AUTOSTART_NAME', 'SHORTCUT_NAME', 'LAUNCHER', 'ASKS_ABOUT_AUTOSTART', 'PROGRAM_SUFFIX',
+                               'PROGRAM_EXAMPLE', 'PROGRAM_LIST_NOTE', 'SCRIPT_EXTRA_SUFFIXES', 'DEFAULT_PROFILE', 'DEFAULT_PORT',
+                               'RESETS_ON_OPEN', 'PLUGIN_ENV_KEEP', 'VENV_SCRIPTS', 'VENV_PYTHON', 'VENV_PYTHON_WINDOWLESS']}
 FCNTL = re.compile(r'^\s*(?:import fcntl|from fcntl\b)', re.MULTILINE)
 
 

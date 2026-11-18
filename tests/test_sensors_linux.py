@@ -77,5 +77,24 @@ class AmdTests(unittest.TestCase):
         self.assertNotIn('gpu_temp', got)
 
 
+class StatusSourcesTests(unittest.TestCase):
+    """What the shared SystemStats asks of every system, answered for Linux."""
+
+    def test_the_status_screen_reads_native_counters_and_the_root_disk(self):
+        self.assertTrue(sensors.NATIVE_SENSORS)
+        self.assertEqual(sensors.disk_root(), '/')
+        self.assertEqual(sensors.extra_gpu_readers(), [])
+        self.assertTrue(callable(sensors.native_counters().sample))
+
+    def test_hwinfo_is_a_windows_program_and_gives_no_readings(self):
+        self.assertEqual(sensors.hwinfo_reader().read(), [])
+
+    def test_system_stats_uses_them(self):
+        from system_stats import SystemStats
+        stats = SystemStats(lhm=type('Silent', (), {'read': lambda self: []})())
+        self.assertTrue(stats.native_sensors)
+        self.assertIsInstance(stats.counters, sensors.LinuxSensors)
+
+
 if __name__ == '__main__':
     unittest.main()

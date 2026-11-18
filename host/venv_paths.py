@@ -1,12 +1,12 @@
 """Where the project's own Python lives: Windows keeps it in .venv/Scripts, Linux in .venv/bin."""
 from pathlib import Path
-import os
 
-SCRIPTS = 'Scripts' if os.name == 'nt' else 'bin'
+from platform_support import load
+
+SCRIPTS = load('labels').VENV_SCRIPTS
 
 
 def venv_python(root: Path, windowless: bool = False) -> Path:
     """The venv's python; on Windows `windowless` picks pythonw.exe (no console window)."""
-    if os.name == 'nt':
-        return Path(root) / 'host/.venv/Scripts' / ('pythonw.exe' if windowless else 'python.exe')
-    return Path(root) / 'host/.venv/bin/python'
+    labels = load('labels')
+    return Path(root) / 'host/.venv' / labels.VENV_SCRIPTS / (labels.VENV_PYTHON_WINDOWLESS if windowless else labels.VENV_PYTHON)

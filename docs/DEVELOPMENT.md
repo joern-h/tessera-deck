@@ -30,6 +30,7 @@ host/            Windows host
   config_store.py      Configuration versions and backups
   panel_serial.py      USB link: handshake, layout and image transfer
   input_common.py      The key names and operation lists every system shares
+  platform_support.py  The one place that reads sys.platform; `load('name')` gives the module of this system's package
   platform_windows/    Windows-specific code (input and windows, ...); platform_linux/ is its Linux counterpart
   tessera_app.py       Local editor server and WebView2 window
   tessera_terminal.py  Terminal UI
@@ -75,6 +76,22 @@ Use the virtual environment that `Tessera.cmd --setup` creates in `host\.venv`.
 | JavaScript syntax | `foreach ($f in 'core','app','dialogs') { node --check host/editor/$f.js }` in PowerShell (`node --check` reads only its first file) |
 
 Ruff and coverage are not in `requirements.txt`. Install them with `pip install ruff==0.17.2 coverage==7.17.0`. [CONTRIBUTING.md](../CONTRIBUTING.md) has the exact CI commands.
+
+### Platforms
+
+Windows code lives in `host/platform_windows/` and Linux code in `host/platform_linux/`. Shared modules never test
+`os.name` or `sys.platform`: they import `IS_WINDOWS` / `IS_LINUX` or call `platform_support.load('name')`, which gives
+`platform_<system>.name`. `platform_support` raises `UnsupportedPlatform` on any other system, so the host does not start
+on macOS. Both packages have a module of the same name with the same functions (`autostart`, `processes`, `sensors`,
+`secrets`, `shortcuts`, `labels` ...). `labels` holds the constants the shared code reads (program-name rule, default port,
+the words "Windows" / "the desktop" in messages).
+
+To add a system: add `platform_<name>/` with the same modules, name it in `platform_support.detect`, and run
+`tests/test_platform_support.py`. Its parity test lists the functions and constants the shared code uses, and its isolation
+test imports every shared module with the other package blocked.
+
+Tests that exercise one system's behaviour carry `@windows_only` / `@linux_only` from `tests/platform_marks.py`; the rest
+run everywhere.
 
 The tests use fake serial ports, fake HTTP and a fake esptool. None of them needs the panel.
 
@@ -172,6 +189,7 @@ GitHub Actions runs these on every pull request and every push to main:
 | Workflow, job | What it checks |
 |---|---|
 | `ci.yml`, host | Lint, tests with the 73 % coverage floor, terminal check and dependency audit, on Windows with Python 3.11, 3.12 and 3.14 |
+| `ci.yml`, host-linux | The tests that are not Windows-only, on Linux under Xvfb (Python 3.11 and 3.14) |
 | `ci.yml`, host-lock | The tests in a clean venv installed from `host/requirements.lock` (Python 3.11 and 3.14) |
 | `ci.yml`, firmware-analysis | `cppcheck` on the firmware sources |
 | `ci.yml`, firmware | Firmware build in the ESP-IDF 6.1 container, packaging, native LVGL tests, and the image cache benchmark with `--check`, with and without `--old-firmware` |

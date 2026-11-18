@@ -128,3 +128,30 @@ class LinuxSensors:
             return None
         elapsed = now - previous[1]
         return (counter - previous[0]) / 1_000_000 / elapsed if elapsed > 0 else None
+
+
+# What the shared status code asks of every system (platform_windows/sensors.py has the same names)
+NATIVE_SENSORS = True  # hwmon, the amdgpu files and nvidia-smi answer without a helper program
+
+
+def native_counters(base_clock_mhz=None):
+    """The counters that answer sample() for the status screen."""
+    return LinuxSensors()
+
+
+class _NoReadings:
+    def read(self) -> list[dict]:
+        return []
+
+
+def hwinfo_reader():
+    """HWiNFO is a Windows program: nothing to read here."""
+    return _NoReadings()
+
+
+def disk_root() -> str:
+    return '/'
+
+
+def extra_gpu_readers() -> list:
+    return []

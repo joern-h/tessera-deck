@@ -173,3 +173,12 @@ def legacy_icon_image(path):
         gdi32.DeleteDC(memory)
         user32.ReleaseDC(0, screen)
         user32.DestroyIcon(info.hIcon)
+
+
+def program_icon_image(target):
+    """The icon of a program, shortcut or Store app as an image: the shell's 256 px icon, else the older 32 px one."""
+    resolved = resolve_program_target(target)
+    try:
+        return shell_item_image(resolved)
+    except (OSError, ValueError, ctypes.ArgumentError):
+        return legacy_icon_image(resolved)

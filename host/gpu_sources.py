@@ -6,7 +6,7 @@ own ADL library (platform_windows/gpu_adl.py). Libre Hardware Monitor or HWiNFO 
 """
 from __future__ import annotations
 
-import os
+from platform_support import load
 import shutil
 import subprocess
 from process_flags import NO_WINDOW
@@ -67,10 +67,7 @@ class GpuReaders:
 
     def __init__(self, readers=None):
         if readers is None:
-            readers = [NvidiaSmiReader()]
-            if os.name == 'nt':
-                from platform_windows.gpu_adl import AdlReader
-                readers.append(AdlReader())
+            readers = [NvidiaSmiReader(), *load('sensors').extra_gpu_readers()]
         self.readers = readers
 
     def sample(self) -> dict[str, float]:
