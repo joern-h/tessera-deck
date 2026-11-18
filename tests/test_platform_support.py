@@ -137,6 +137,48 @@ class IsolationTests(unittest.TestCase):
         self.assertEqual(json.loads(result.stdout.splitlines()[-1]), {})
 
 
+PORTABLE_PROBE = """
+import importlib, json, sys
+for name in sys.argv[1:2][0].split(','):
+    sys.modules[name] = None  # the system library is missing, as on the other system
+sys.path.insert(0, 'host')
+failed = {}
+for name in sys.argv[2:]:
+    try:
+        importlib.import_module(name)
+    except Exception as exc:
+        failed[name] = f'{type(exc).__name__}: {exc}'
+print(json.dumps(failed))
+"""
+# libraries that exist on one system only
+POSIX_ONLY = 'fcntl,termios'  # the ones this project could import; psutil and others bring their own system libraries
+WINDOWS_ONLY = 'msvcrt,winreg,winsound,_winapi,win32pdh,win32api,win32con,win32gui,pycaw,comtypes,winrt'
+
+
+# programs that run in their own process (the tray menu helper exits when its GTK libraries are missing)
+SCRIPTS = {'gtk_menu_helper'}
+
+
+class ImportableEverywhereTests(unittest.TestCase):
+    """Every module of both packages imports on any system: a system library is imported where it is used. The parity
+    test imports both packages on both systems, so a module that cannot would fail the other system's tests."""
+
+    def check(self, package, missing):
+        names = sorted(f'{package}.{path.stem}' for path in (ROOT / 'host' / package).glob('*.py')
+                       if path.stem not in SCRIPTS)
+        result = subprocess.run([sys.executable, '-I', '-c', PORTABLE_PROBE, missing, *names], cwd=ROOT,
+                                capture_output=True, text=True, timeout=120)
+        self.assertEqual(result.returncode, 0, result.stderr[-500:])
+        import json
+        self.assertEqual(json.loads(result.stdout.splitlines()[-1]), {})
+
+    def test_the_linux_modules_import_without_the_posix_libraries(self):
+        self.check('platform_linux', POSIX_ONLY)
+
+    def test_the_windows_modules_import_without_the_windows_libraries(self):
+        self.check('platform_windows', WINDOWS_ONLY)
+
+
 class LayeringTests(unittest.TestCase):
     def test_shared_modules_do_not_import_fcntl(self):
         offenders = [path.name for path in sorted((ROOT / 'host').glob('*.py'))
