@@ -1,5 +1,4 @@
 """Local graphical editor for the standalone Tessera."""
-import logging
 from default_profile import seed_path
 from desktop import open_path
 from venv_paths import venv_python
@@ -24,7 +23,7 @@ import webbrowser
 
 from deck_control import (FIRMWARE_FLAG_PATH, ROOT, Controller, autostart_enabled,
                           save_profiles, set_autostart)
-from tesserad import SUPPORTED_PROTOCOLS, Daemon, DeviceRejected, PanelSerial, bring_to_front, validate_config
+from tesserad import SUPPORTED_PROTOCOLS, Daemon, DeviceRejected, PanelSerial, validate_config
 from deck_assets import Assets
 import ambient
 import config_store
@@ -55,36 +54,11 @@ def editor_build_id():
 
 
 def activate_window(pid):
-    """Restore the existing native editor instead of opening a duplicate."""
+    """Restore the existing native editor instead of opening a duplicate (Windows; elsewhere the editor is a browser tab)."""
     if os.name != 'nt':
         return False
-    try:
-        import ctypes
-        from ctypes import wintypes
-        user32 = ctypes.WinDLL('user32', use_last_error=True)
-        found = []
-        callback_type = ctypes.WINFUNCTYPE(wintypes.BOOL, wintypes.HWND, wintypes.LPARAM)
-
-        @callback_type
-        def visit(hwnd, _):
-            owner = wintypes.DWORD()
-            user32.GetWindowThreadProcessId(hwnd, ctypes.byref(owner))
-            if owner.value == pid and user32.IsWindowVisible(hwnd):
-                length = user32.GetWindowTextLengthW(hwnd)
-                title = ctypes.create_unicode_buffer(length + 1)
-                user32.GetWindowTextW(hwnd, title, length + 1)
-                if title.value == 'Tessera':
-                    found.append(hwnd)
-                    return False
-            return True
-
-        user32.EnumWindows(visit, 0)
-        if not found:
-            return False
-        bring_to_front(user32, found[0])
-        return True
-    except (AttributeError, OSError, ValueError):
-        return False
+    from platform_windows.editor_window import activate_window as windows_activate_window
+    return windows_activate_window(pid)
 
 
 @lru_cache(maxsize=1)
@@ -123,40 +97,12 @@ def action_pack_catalog():
     return catalog
 
 
-APP_USER_MODEL_ID = 'Tessera.Editor'
-
-
 def brand_taskbar_identity():
-    """Give this process its own Windows identity.
-
-    Without one, Windows groups the editor window under pythonw.exe and shows the Python
-    file icon on the taskbar instead of the window's own icon.
-    """
+    """Give this process its own Windows identity, so the taskbar shows the editor's own icon."""
     if os.name != 'nt':
         return
-    import ctypes
-    try:
-        ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(APP_USER_MODEL_ID)
-    except (AttributeError, OSError):
-        pass
-
-
-def fit_to_work_area(window):
-    """Fill the screen without covering the taskbar: a maximized WebView2 window can end up under it."""
-    try:
-        import ctypes
-        from ctypes import wintypes
-        window.events.shown.wait(15)
-        user32 = ctypes.WinDLL('user32', use_last_error=True)
-        area = wintypes.RECT()
-        if not user32.SystemParametersInfoW(0x30, 0, ctypes.byref(area), 0):  # SPI_GETWORKAREA: the screen minus the taskbar
-            return
-        handle = user32.FindWindowW(None, 'Tessera')
-        if handle:
-            user32.ShowWindow(handle, 9)  # SW_RESTORE, so the size below applies
-            user32.SetWindowPos(handle, 0, area.left, area.top, area.right - area.left, area.bottom - area.top, 0x0044)  # no z-order change, show
-    except (AttributeError, OSError, ValueError):
-        pass
+    from platform_windows.editor_window import brand_taskbar_identity as windows_brand_taskbar_identity
+    windows_brand_taskbar_identity()
 
 
 WINDOW_FILE = ROOT / 'host/window.local.json'
@@ -189,27 +135,12 @@ def save_window_geometry(geometry, saved_file=WINDOW_FILE):
 
 
 def open_window(url):
-    """Open the editor in a native WebView2 window; return False on fallback."""
+    """Open the editor in a native window (Windows: WebView2); anything else, or a failure, opens a browser tab. Returns
+    False for the browser."""
     if os.name == 'nt':
-        brand_taskbar_identity()
-        try:
-            import webview
-            webview.settings['ALLOW_DOWNLOADS'] = True  # Export saves through a download; pywebview cancels them all without this
-            screen = webview.screens[0]
-            width, height, x, y = window_geometry(screen)
-            window = webview.create_window('Tessera', url, width=width, height=height, x=x, y=y,
-                                           min_size=(min(MIN_WINDOW[0], screen.width), min(MIN_WINDOW[1], screen.height)),
-                                           background_color='#0A0E10', text_select=True)
-            # Remember the last size and place: the events give logical pixels, the same units create_window takes.
-            geometry = {}
-            window.events.resized += lambda width, height: geometry.update(width=width, height=height)
-            window.events.moved += lambda x, y: geometry.update(x=x, y=y)
-            window.events.closing += lambda: save_window_geometry(dict(geometry))
-            webview.start(fit_to_work_area if x is None else None, (window,), private_mode=True,
-                          storage_path=str(ROOT / 'host/.webview-data'), icon=str(ROOT / 'host/tessera.ico'))
+        from platform_windows.editor_window import open_native_window
+        if open_native_window(url, window_geometry, save_window_geometry, MIN_WINDOW, ROOT):
             return True
-        except Exception:
-            logging.getLogger(__name__).warning('WebView2 window failed; using the browser', exc_info=True)
     webbrowser.open(url)
     return False
 
@@ -233,70 +164,21 @@ def installed_programs():
 
 
 def scan_programs():
-    """Return local Start-menu and taskbar shortcuts without launching anything."""
+    """Return the programs of the system's menu (Windows: Start menu and Store apps; Linux: .desktop entries)."""
     if sys.platform.startswith('linux'):
         from platform_linux import programs
         return programs.scan()
     if os.name != 'nt':
         return []
-    roots = [
-        Path(os.environ.get('APPDATA', '')) / 'Microsoft/Windows/Start Menu/Programs',
-        Path(os.environ.get('PROGRAMDATA', '')) / 'Microsoft/Windows/Start Menu/Programs',
-        Path(os.environ.get('APPDATA', '')) / 'Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar',
-        Path(os.environ.get('USERPROFILE', '')) / 'Desktop',
-        Path(os.environ.get('PUBLIC', '')) / 'Desktop',
-    ]
-    ignored = ('uninstall', 'readme', 'documentation', 'manual', 'release notes', 'support')
-    programs = {}
-    for root in roots:
-        if not root.is_dir():
-            continue
-        try:
-            paths = root.rglob('*.lnk')
-            for path in paths:
-                name = path.stem.strip()
-                key = name.casefold()
-                if not name or any(word in key for word in ignored) or key in programs:
-                    continue
-                programs[key] = {'name': name, 'target': str(path)}
-        except OSError:
-            continue
-    # Store apps are often absent from the shortcut folders. Get-StartApps is
-    # the same inventory Windows Search uses and gives us stable AppsFolder IDs.
-    script = ('[Console]::OutputEncoding=[Text.UTF8Encoding]::new(); '
-              'Get-StartApps | Select-Object Name,AppID | ConvertTo-Json -Compress')
-    try:
-        result = _powershell(script, 20)
-        values = json.loads(result.stdout or '[]')
-        if isinstance(values, dict):
-            values = [values]
-        for item in values:
-            name, app_id = item.get('Name', '').strip(), item.get('AppID', '').strip()
-            key = name.casefold()
-            if name and app_id and key not in programs:
-                programs[key] = {'name': name, 'target': 'shell:AppsFolder\\' + app_id}
-    except (OSError, subprocess.SubprocessError, ValueError, AttributeError):
-        pass
-    return sorted(programs.values(), key=lambda item: item['name'].casefold())
-
-
-def _powershell(script, timeout, env=None):
-    return subprocess.run(['powershell.exe', '-NoProfile', '-NonInteractive', '-Command', script], env=env,
-                          capture_output=True, text=True, encoding='utf-8', timeout=timeout,
-                          creationflags=subprocess.CREATE_NO_WINDOW)
+    from platform_windows.shell import scan_start_menu
+    return scan_start_menu()
 
 
 def shortcut_target(path):
     if os.name != 'nt' or Path(path).suffix.lower() != '.lnk':
         return str(path)
-    script = ('$shortcut=(New-Object -ComObject WScript.Shell).CreateShortcut($env:TESSERA_LINK); '
-              '[Console]::OutputEncoding=[Text.UTF8Encoding]::new(); $shortcut.TargetPath')
-    try:
-        result = _powershell(script, 10, env=dict(os.environ, TESSERA_LINK=str(path)))
-        value = result.stdout.strip()
-        return value or str(path)
-    except (OSError, subprocess.SubprocessError):
-        return str(path)
+    from platform_windows.shell import shortcut_target as windows_shortcut_target
+    return windows_shortcut_target(path)
 
 
 class Editor:
