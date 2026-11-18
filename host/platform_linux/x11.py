@@ -8,7 +8,7 @@ import subprocess
 import time
 
 from platform_linux import BackendUnavailable
-from platform_linux.base import DesktopBackend, MOUSE_OPERATIONS
+from platform_linux.base import DesktopBackend
 
 TIMEOUT = 5.0
 TYPE_CHUNK = 64  # characters per xdotool call when typing without a pause: the stop request is checked between

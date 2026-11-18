@@ -9,7 +9,6 @@ from __future__ import annotations
 
 import glob
 import os
-import sys
 import re
 import shutil
 from pathlib import Path, PureWindowsPath

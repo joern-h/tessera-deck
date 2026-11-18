@@ -5,7 +5,6 @@ a 1100-byte buffer, so every payload here is built to stay well below that.
 """
 from __future__ import annotations
 
-import sys
 import json
 
 PROTOCOL = 4

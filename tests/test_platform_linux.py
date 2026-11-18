@@ -50,8 +50,8 @@ class SessionTests(unittest.TestCase):
     def test_wayland_and_a_missing_session_refuse_input_with_a_reason(self):
         for env, text in (({'XDG_SESSION_TYPE': 'wayland'}, 'Wayland'), ({}, 'graphical session')):
             backend = platform_linux.backend(env)
-            for call in (lambda: backend.send_keys(['ctrl']), lambda: backend.send_text('a'),
-                         lambda: backend.send_mouse('left'), lambda: backend.set_clipboard('a')):
+            for call in (lambda b=backend: b.send_keys(['ctrl']), lambda b=backend: b.send_text('a'),
+                         lambda b=backend: b.send_mouse('left'), lambda b=backend: b.set_clipboard('a')):
                 with self.assertRaisesRegex(BackendUnavailable, text):
                     call()
             self.assertIsNone(backend.active_window())

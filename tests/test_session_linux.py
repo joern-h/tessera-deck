@@ -134,7 +134,6 @@ class ResetOnOpenTests(unittest.TestCase):
         self.assertEqual(slept, [])
 
     def test_a_damaged_layout_is_sent_again_on_the_same_dev_port_only(self):
-        import panel_serial
         for port, tries in (('/dev/ttyUSB1', 2), ('COM4', 1)):
             panel = self.link(port)
             calls = []

@@ -10,7 +10,6 @@ from pathlib import Path
 import shutil
 import subprocess
 import sys
-import threading
 import time
 import types
 import unittest
@@ -101,7 +100,7 @@ class RealMenuTests(unittest.TestCase):
         try:
             import tkinter  # noqa: F401
         except ImportError:
-            raise unittest.SkipTest('needs tkinter')
+            raise unittest.SkipTest('needs tkinter') from None
         cls.server = subprocess.Popen(['Xvfb', '-displayfd', '1', '-screen', '0', '1024x768x24'], stdout=subprocess.PIPE,
                                       stderr=subprocess.DEVNULL, text=True)
         cls.display = ':' + cls.server.stdout.readline().strip()

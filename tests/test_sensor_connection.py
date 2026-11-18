@@ -17,7 +17,6 @@ import psutil
 import tesserad as deck
 import host_support  # noqa: E402
 import input_common
-from platform_windows import input as win_input
 from platform_windows.sensors import LibreHardwareMonitorReader
 
 TREE = {'Text': 'root', 'Children': [{'Text': 'pc', 'Children': [{'Text': 'CPU', 'Children': [
