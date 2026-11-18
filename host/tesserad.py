@@ -30,7 +30,7 @@ from datetime import datetime
 import cockpit
 import permission
 from deck_assets import Assets
-from program_locator import locate
+from platform_windows.programs import locate
 from substitution import check_web_url, expand_environment, substitute
 from pc_state import PcState
 from system_audio import MediaReader, control_audio, control_media, read_audio

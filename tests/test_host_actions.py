@@ -206,7 +206,7 @@ class ScriptStepTests(unittest.TestCase):
         self.assertTrue(make_daemon().waits([{'type': 'script', 'path': 'C:\\a.py'}]))
 
     def test_interpreter_choice(self):
-        from program_locator import script_command
+        from platform_windows.programs import script_command
         which = {'py.exe': 'C:\\py.exe', 'pyw.exe': 'C:\\pyw.exe', 'powershell.exe': 'C:\\ps.exe', 'node.exe': 'C:\\node.exe'}.get
         pick = lambda path, **kw: script_command(path, which=which, registry=lambda name: None,
                                                  association=lambda suffix: None, roots=lambda: [], **kw)
@@ -224,7 +224,7 @@ class ScriptStepTests(unittest.TestCase):
             pick('C:\\s\\a.vbs')
 
     def test_autohotkey_uses_the_file_association_then_app_paths(self):
-        from program_locator import script_command
+        from platform_windows.programs import script_command
         exe = self.make('AutoHotkey64.exe')
         via_association = script_command('C:\\s\\a.ahk', which=lambda name: None, registry=lambda name: None,
                                         association=lambda suffix: f'"{exe}" "%1" %*')
@@ -236,7 +236,7 @@ class ScriptStepTests(unittest.TestCase):
 
     def test_a_per_user_autohotkey_is_found_without_the_file_association(self):
         # The per-user installer puts AutoHotkey in %LOCALAPPDATA%\Programs and adds neither App Paths nor PATH
-        from program_locator import script_command
+        from platform_windows.programs import script_command
         programs = Path(self.folder.name)
         (programs / 'AutoHotkey' / 'v2').mkdir(parents=True)
         (programs / 'AutoHotkey' / 'v2' / 'AutoHotkey64.exe').write_bytes(b'')

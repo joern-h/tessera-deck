@@ -35,7 +35,7 @@ def resolve_program_target(target):
     import shutil
     if not isinstance(target, str) or not target.strip():
         raise ValueError('Choose a valid program')
-    from program_locator import locate
+    from platform_windows.programs import locate
     target = os.path.expandvars(target.strip())
     if target.lower().startswith('shell:'):
         return target

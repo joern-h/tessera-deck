@@ -132,8 +132,8 @@ class ScriptTests(unittest.TestCase):
     @unittest.skipUnless(sys.platform.startswith('linux'), 'Linux only')
     def test_the_host_uses_it_and_accepts_sh_scripts(self):
         import desktop
-        import program_locator
-        self.assertIn('.sh', program_locator.SCRIPT_SUFFIXES)
+        import script_files
+        self.assertIn('.sh', script_files.SCRIPT_SUFFIXES)
         command = desktop.script_command('/x/a.sh')
         self.assertEqual((os.path.basename(command[0]) in ('bash', 'sh'), command[1]), (True, '/x/a.sh'))
 

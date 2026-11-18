@@ -7,7 +7,7 @@ import unittest
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / 'host'))
-from program_locator import locate, program_roots
+from platform_windows.programs import locate, program_roots
 from system_stats import gpu_discrete_bonus, select_hwinfo_metrics
 
 

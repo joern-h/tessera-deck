@@ -32,5 +32,5 @@ def script_command(script: str):
     if sys.platform.startswith('linux'):
         from platform_linux import scripts
         return scripts.command(script)
-    from program_locator import script_command as windows_script_command
+    from platform_windows.programs import script_command as windows_script_command
     return windows_script_command(script)

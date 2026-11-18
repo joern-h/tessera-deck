@@ -14,6 +14,8 @@ import re
 import shutil
 from pathlib import Path, PureWindowsPath
 
+from script_files import BATCH_SUFFIXES, SCRIPT_SUFFIXES, SCRIPT_VARIABLE, script_text  # noqa: F401
+
 ROOT_VARIABLES = ('ProgramFiles', 'ProgramFiles(x86)', 'ProgramW6432', 'LOCALAPPDATA', 'APPDATA')
 VERSION_SEGMENT = re.compile(r'(?i)^(\d+(\.\d+)*|[A-Za-z]+\d+(\.\d+)*|v\d+(\.\d+)*)$')
 PROGRAM_SUFFIXES = ('.exe', '.bat', '.cmd', '.com', '.lnk')
@@ -105,16 +107,8 @@ def locate(target: str, environment=None, registry=_app_paths) -> str | None:
     return None
 
 
-SCRIPT_SUFFIXES = ('.py', '.pyw', '.ps1', '.bat', '.cmd', '.ahk', '.js') + (('.sh',) if sys.platform.startswith('linux') else ())
-BATCH_SUFFIXES = ('.bat', '.cmd')
-SCRIPT_VARIABLE = re.compile(r'%([^%\s]+)%')  # %NAME% only: $NAME is a legal folder name, so expandvars is not used
 AUTOHOTKEY_NAMES = ('AutoHotkey64.exe', 'AutoHotkey32.exe', 'AutoHotkey.exe', 'AutoHotkeyU64.exe')
 COMMAND_TOKEN = re.compile(r'"([^"]*)"|(\S+)')
-
-
-def script_text(path: str) -> str:
-    """A script step's path as typed: without the spaces around it and the quotes of Explorer's Copy as path."""
-    return path.strip().strip('"').strip()
 
 
 def _association(suffix: str) -> str | None:

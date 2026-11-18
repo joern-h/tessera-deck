@@ -12,7 +12,7 @@ import widgets
 from program_name import SUFFIX
 from pc_state import FLAG_SOURCES, check_audio, check_media
 from plugins import PLUGIN_ID, check_plugin_config
-from program_locator import BATCH_SUFFIXES, SCRIPT_SUFFIXES, SCRIPT_VARIABLE, script_text
+from script_files import BATCH_SUFFIXES, SCRIPT_SUFFIXES, SCRIPT_VARIABLE, script_text
 from substitution import check_web_url
 from input_common import MOUSE_OPERATIONS, WINDOW_OPERATIONS, split_hotkey
 

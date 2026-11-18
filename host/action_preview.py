@@ -7,7 +7,7 @@ import re
 import shutil
 
 from action_runner import script_path
-from program_locator import locate, script_command as windows_script_command
+from platform_windows.programs import locate, script_command as windows_script_command
 from input_common import split_hotkey
 from substitution import ENV_REFERENCE, check_web_url, expand_environment, substitute
 
